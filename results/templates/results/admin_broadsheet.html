@@ -1,0 +1,37 @@
+@staff_member_required
+def admin_broadsheet(request, class_id):
+    # class_id here is actually the student_class name, not PK
+    student_class_name = get_object_or_404(Student, id=Student.objects.filter(student_class=class_id).first().id).student_class if Student.objects.filter(student_class=class_id).exists() else class_id
+
+    TERM = request.GET.get('term', 'First Term') 
+    SESSION = '2025/2026'
+    ALL_TERMS = ['First Term', 'Second Term', 'Third Term']
+    if TERM not in ALL_TERMS: TERM = 'First Term'
+
+    students = Student.objects.filter(student_class=student_class_name).order_by('full_name')
+    
+    # Get all subjects for this class by checking what subjects have scores
+    subject_ids = Score.objects.filter(student__student_class=student_class_name, term=TERM, session=SESSION).values_list('subject_id', flat=True).distinct()
+    subjects = Subject.objects.filter(id__in=subject_ids).order_by('name')
+
+    broadsheet_data = []
+    for student in students:
+        student_row = {'student': student, 'scores': [], 'total': 0}
+        student_total = 0
+        for subject in subjects:
+            score = Score.objects.filter(student=student, subject=subject, term=TERM, session=SESSION).first()
+            if score:
+                score_total = score.ca1 + score.ca2 + score.project + score.assignment + score.exam
+                student_total += score_total
+                student_row['scores'].append({'total': score_total, 'grade': get_grade(score_total)})
+            else:
+                student_row['scores'].append({'total': '-', 'grade': '-'})
+        student_row['total'] = student_total
+        student_row['average'] = round(student_total / len(subjects), 2) if len(subjects) > 0 else 0
+        broadsheet_data.append(student_row)
+    
+    broadsheet_data.sort(key=lambda x: x['total'], reverse=True)
+    for i, row in enumerate(broadsheet_data): row['position'] = i + 1
+
+    context = {'student_class': student_class_name, 'subjects': subjects, 'broadsheet_data': broadsheet_data, 'term': TERM, 'session': SESSION, 'all_terms': ALL_TERMS}
+    return render(request, 'results/admin_broadsheet.html', context)

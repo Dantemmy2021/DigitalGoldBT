@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OKC Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 1200px; margin: auto; }
+        nav { background: #004080; color: white; padding: 10px; margin-bottom: 20px; }
+        nav a { color: white; text-decoration: none; margin-right: 15px; }
+        .messages { padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; margin-bottom: 10px; }
+        table input { text-align: center; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/teacher/">Teacher Dashboard</a>
+        <a href="/admin/">Admin</a>
+        <span style="float:right;">Logged in as: {{ user.username }}</span>
+    </nav>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="messages">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

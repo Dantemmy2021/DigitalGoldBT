@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block content %}
+<h2>Enter Scores: {{ subject.name }} {{ subject.student_class }}</h2>
+<p><b>CA1, CA2, Project, Assignment: /10 each | Exam: /60 | Total: /100</b></p>
+
+{% if messages %}
+  {% for message in messages %}
+    <p style="color:red;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<form method="post">
+{% csrf_token %}
+<table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%;">
+    <tr style="background:#eee;">
+        <th>S/N</th>
+        <th>Student Name</th>
+        <th>CA1<br>/10</th>
+        <th>CA2<br>/10</th>
+        <th>Project<br>/10</th>
+        <th>Assign<br>/10</th>
+        <th>EXAM<br>/60</th>
+        <th>TOTAL<br>/100</th>
+        <th>GRADE</th>
+    </tr>
+    {% for student in students %}
+    {% with score=scores_dict|get_item:student.id %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ student.full_name }}</td>
+        <td><input type="number" class="score-input" name="ca1_{{ student.id }}" value="{{ score.ca1|default:'' }}" min="0" max="10" style="width:60px;" required></td>
+        <td><input type="number" class="score-input" name="ca2_{{ student.id }}" value="{{ score.ca2|default:'' }}" min="0" max="10" style="width:60px;" required></td>
+        <td><input type="number" class="score-input" name="project_{{ student.id }}" value="{{ score.project|default:'' }}" min="0" max="10" style="width:60px;" required></td>
+        <td><input type="number" class="score-input" name="assignment_{{ student.id }}" value="{{ score.assignment|default:'' }}" min="0" max="10" style="width:60px;" required></td>
+        <td><input type="number" class="score-input" name="exam_{{ student.id }}" value="{{ score.exam|default:'' }}" min="0" max="60" style="width:60px;" required></td>
+        <td class="total" style="font-weight:bold;">-</td>
+        <td class="grade" style="font-weight:bold;">-</td>
+    </tr>
+    {% endwith %}
+    {% endfor %}
+</table>
+<br>
+<button type="submit" style="padding:10px 20px; background:green; color:white; border:none; cursor:pointer;">Save Scores</button>
+</form>
+
+<script>
+// Auto calculate TOTAL and GRADE
+function calcGrade(total){
+    if(total >= 70) return 'A';
+    if(total >= 60) return 'B';
+    if(total >= 50) return 'C';
+    if(total >= 45) return 'D';
+    if(total >= 40) return 'E';
+    if(total > 0) return 'F';
+    return '-';
+}
+
+function updateRow(row){
+    let inputs = row.querySelectorAll('.score-input');
+    let total = 0;
+    inputs.forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    row.querySelector('.total').innerText = total;
+    row.querySelector('.grade').innerText = calcGrade(total);
+}
+
+// Run on load to show saved scores
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('tr').forEach(row => {
+        if(row.querySelector('.score-input')) updateRow(row);
+    });
+});
+
+// Run on input
+document.querySelectorAll('.score-input').forEach(input => {
+    input.addEventListener('input', function() {
+        updateRow(this.closest('tr'));
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+    .btn { padding: 6px 12px; text-decoration: none; border-radius: 4px; color: white; display: inline-block; margin: 2px; font-size: 12px; }
+    .btn-enter { background: #007bff; }
+    .btn-broadsheet { background: #ffc107; color: #000; }
+    .btn-print { background: #28a745; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding:10px; text-align:left; border:1px solid #ddd; }
+    th { background:#f2f2f2; }
+</style>
+
+<h1>My Subjects</h1>
+<div class="card">
+    {% for subject in subjects %}
+        <div style="margin-bottom: 10px; padding: 10px; border-bottom: 1px solid #eee;">
+            <strong>{{ subject.name }} - {{ subject.student_class }}</strong>
+            <br>
+            <a href="{% url 'results:enter_scores' subject.id %}" class="btn btn-enter">
+                ✍️ Enter Scores
+            </a>
+            <!-- NEW: BROADSHEET BUTTON -->
+            <a href="{% url 'results:admin_broadsheet' subject.student_class.id %}?term=Third Term" 
+               class="btn btn-broadsheet" target="_blank">
+                📊 Print Broadsheet
+            </a>
+        </div>
+    {% empty %}
+        <p>No subjects assigned to you yet. Go to Admin > Subjects > set Teacher</p>
+    {% endfor %}
+</div>
+
+<hr style="margin: 30px 0;">
+
+<h1>Students in My Classes</h1>
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Class</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ student.full_name }}</td>
+                <td>{{ student.student_class.name }}</td>
+                <td style="text-align:center;">
+                    <a href="{% url 'results:print_result' student.id %}" class="btn btn-print">
+                        🖨️ Print Term Result
+                    </a>
+                    <a href="{% url 'results:admin_print_student' student.id %}?term=Third Term" 
+                       class="btn" style="background:#6f42c1;" target="_blank">
+                        📄 Admin Slip
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No students found in your classes.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
