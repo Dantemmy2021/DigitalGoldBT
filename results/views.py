@@ -354,7 +354,7 @@ def news_detail(request, school_slug, news_id):
     return render(request, 'results/news_detail.html', {'school': school, 'news_item': news_item})
 
 # ===== HOME / REDIRECT =====
-@login_required(login_url='login')
+@login_required(login_url='/admin/login/')
 def home_redirect(request):
     if request.user.is_staff and request.user.is_superuser:
         return redirect('/admin/')
