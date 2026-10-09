@@ -2,32 +2,160 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>OKC Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>
+        {% block title %}
+            {% if teacher %}
+                {{ teacher.school.name }} - Portal
+            {% elif student %}
+                {{ student.school.name }} - Parent Portal
+            {% elif school %}
+                {{ school.name }} - Portal
+            {% else %}
+                OKC Portal
+            {% endif %}
+        {% endblock %}
+    </title>
+
+    <!-- BOOTSTRAP 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
-        .container { background: white; padding: 20px; border-radius: 8px; max-width: 1200px; margin: auto; }
-        nav { background: #004080; color: white; padding: 10px; margin-bottom: 20px; }
-        nav a { color: white; text-decoration: none; margin-right: 15px; }
-        .messages { padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; margin-bottom: 10px; }
-        table input { text-align: center; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
+        
+        .school-header { 
+            text-align: center; 
+            padding: 15px 20px; 
+            background: #e9f2ff; 
+            border-bottom: 3px solid #004080; 
+            font-weight: bold; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .school-header img {
+            height: 70px;
+            width: auto;
+            object-fit: contain;
+        }
+        .school-header span {
+            font-size: 22px;
+            letter-spacing: 1px;
+        }
+
+        nav { 
+            background: #004080; 
+            color: white; 
+            padding: 12px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap;
+        }
+        nav a { color: white; text-decoration: none; margin-right: 15px; font-weight: bold; }
+        nav a:hover { text-decoration: underline; }
+        .container { background: white; margin: 20px auto; padding: 20px; border-radius: 8px; max-width: 1200px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { color: #004080; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th { background: #004080; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border: 1px solid #ddd; }
+        
+        .btn { display: inline-block; padding: 8px 15px; background: #FFD700; color: #000; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; }
+        .btn:hover { opacity: 0.9; }
+        .logout-btn { background:#ff4d4d; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; }
+        .logout-btn:hover { background: #cc0000; }
+
+        /* FIX FOR CKEDITOR NOTES - MAKES IMAGES/TABLES RESPONSIVE */
+        .note-content img { 
+            max-width: 100%; 
+            height: auto; 
+            display: block;
+            margin: 10px 0;
+        }
+        .note-content table { 
+            width: 100%; 
+            overflow-x: auto;
+            display: block;
+        }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href="/teacher/">Teacher Dashboard</a>
-        <a href="/admin/">Admin</a>
-        <span style="float:right;">Logged in as: {{ user.username }}</span>
+
+    {% comment %} HEADER WITH LOGO {% endcomment %}
+{% if teacher %}
+    <div class="school-header" style="border-bottom-color: {{ teacher.school.primary_color }}; color: {{ teacher.school.primary_color }};">
+        {% if teacher.school.logo %}
+            <img src="{{ teacher.school.logo.url }}" alt="{{ teacher.school.name }} Logo" style="height:60px; margin-bottom:5px;">
+        {% endif %}
+        <span>{{ teacher.school.name|upper }}</span>
+    </div>
+{% elif student %}
+    <div class="school-header" style="border-bottom-color: {{ student.school.primary_color }}; color: {{ student.school.primary_color }};">
+        {% if student.school.logo %}
+            <img src="{{ student.school.logo.url }}" alt="{{ student.school.name }} Logo" style="height:60px; margin-bottom:5px;">
+        {% endif %}
+        <span>{{ student.school.name|upper }}</span>
+    </div>
+{% elif school %}
+    <div class="school-header" style="border-bottom-color: {{ school.primary_color }}; color: {{ school.primary_color }};">
+        {% if school.logo %}
+            <img src="{{ school.logo.url }}" alt="{{ school.name }} Logo" style="height:60px; margin-bottom:5px;">
+        {% endif %}
+        <span>{{ school.name|upper }}</span>
+    </div>
+{% endif %}
+
+    <nav style="background: {% if teacher %}{{ teacher.school.primary_color }}{% elif student %}{{ student.school.primary_color }}{% elif school %}{{ school.primary_color }}{% else %}#004080{% endif %};">
+        <div>
+            {% if request.user.is_staff and request.user.teacher %}
+                <a href="{% url 'results:teacher_dashboard' school_slug=request.user.teacher.school.slug %}">Teacher Dashboard</a>
+                <a href="/admin/">Admin</a>
+            {% endif %}
+            
+            {% if school %}
+                <a href="{% url 'results:teacher_dashboard' school_slug=school.slug %}">Dashboard</a>
+            {% elif teacher %}
+                <a href="{% url 'results:teacher_dashboard' school_slug=teacher.school.slug %}">Dashboard</a>
+            {% elif student %}
+                <a href="{% url 'results:student_dashboard' school_slug=student.school.slug %}">Dashboard</a>
+            {% endif %}
+        </div>
+        <div>
+            {% if request.user.is_authenticated %}
+                Logged in as: <strong>{{ request.user.username }}</strong> | 
+                {% if school %}
+                    <a href="{% url 'results:logout' school_slug=school.slug %}" class="logout-btn">Logout</a>
+                {% elif teacher %}
+                    <a href="{% url 'results:logout' school_slug=teacher.school.slug %}" class="logout-btn">Logout</a>
+                {% elif student %}
+                    <a href="{% url 'results:logout' school_slug=student.school.slug %}" class="logout-btn">Logout</a>
+                {% endif %}
+                <!-- REMOVED BROKEN LOGIN LINK -->
+            {% endif %}
+        </div>
     </nav>
     
     <div class="container">
+        <!-- BOOTSTRAP ALERTS -->
         {% if messages %}
             {% for message in messages %}
-                <div class="messages">{{ message }}</div>
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
             {% endfor %}
         {% endif %}
 
         {% block content %}
         {% endblock %}
     </div>
+
+    <!-- BOOTSTRAP 5 JS - THIS MAKES TABS CLICKABLE -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

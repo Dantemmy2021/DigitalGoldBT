@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div style="padding:20px;">
+  <h2>{{ school.name }} - Admin Dashboard</h2>
+  <h3>Total Students: {{ total_students }} | Total Teachers: {{ total_teachers|default:"0" }}</h3>
+  <hr>
+
+  <!-- QUICK ACTIONS -->
+  <div style="background: {{ school.primary_color|default:'#e8f5e9' }}20; border-left:5px solid {{ school.primary_color|default:'#28a745' }}; padding:15px; margin-bottom:20px; border-radius:5px;">
+    <h4 style="margin-top:0; color:{{ school.primary_color|default:'#28a745' }};">⚡ Quick Actions</h4>
+    <p>Allocate subjects or print ID cards.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="{% url 'bulk_allocate_subjects' school_slug=school.slug %}" 
+         style="background:{{ school.primary_color|default:'#28a745' }}; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">
+         ➕ Bulk Allocate Subjects
+      </a>
+      <a href="/{{ school.slug }}/id-cards/" 
+         style="background:#004080; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:900;">
+         🪪 Student ID Cards
+      </a>
+      <a href="/{{ school.slug }}/teacher-id-cards/" 
+         style="background:#d32f2f; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:900;">
+         👨‍🏫 Teacher/Staff ID Cards
+      </a>
+    </div>
+  </div>
+
+  <h4>Students</h4>
+  <table border="1" width="100%" cellpadding="8" style="border-collapse: collapse;">
+    <thead style="background:{{ school.primary_color|default:'#004080' }}; color:white;">
+      <tr>
+        <th>S/N</th>
+        <th>Admission No</th>
+        <th>Student Name</th>
+        <th>Class</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in students %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ student.admission_no }}</td>
+        <td>{{ student.full_name }}</td>
+        <td>{{ student.student_class.name }}</td>
+        <td><a href="/{{ school.slug }}/id-cards/?student_id={{ student.id }}" style="background:#111; color:white; padding:4px 10px; border-radius:3px; text-decoration:none; font-size:12px;">🪪 ID</a></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align:center; color:red;">No students found</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <br>
+  <h4>Classes in this School:</h4>
+  <ul>
+    {% for class in classes %}
+      <li>
+        {{ class.name }} - 
+        <a href="{% url 'results:admin_broadsheet' school.slug class.id %}">View Broadsheet</a> | 
+        <a href="{% url 'bulk_allocate_subjects' school_slug=school.slug %}?class_id={{ class.id }}">Bulk Allocate</a> | 
+        <a href="/{{ school.slug }}/id-cards/?class_id={{ class.id }}" style="font-weight:900; color:#004080;">🪪 Print IDs for this Class</a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <hr>
+  <h4>Teachers in this School:</h4>
+  <ul>
+    {% for teacher in teachers %}
+      <li>
+        {{ teacher.full_name }} ({{ teacher.staff_id|default:teacher.id }}) - 
+        <a href="/{{ school.slug }}/teacher-id-cards/?teacher_id={{ teacher.id }}" style="font-weight:900; color:#d32f2f;">👨‍🏫 Print ID</a>
+      </li>
+    {% empty %}
+      <li style="color:red;">No teachers found - check if Teacher model has school assigned</li>
+    {% endfor %}
+  </ul>
+
+  <div class="alert alert-info d-flex justify-content-between align-items-center mt-3">
+    <span>Need to add students, teachers or subjects?</span>
+    <a href="/admin/" target="_blank" class="btn btn-primary btn-sm">Open Django Admin</a>
+  </div>
+
+</div>
+
+{% endblock %}

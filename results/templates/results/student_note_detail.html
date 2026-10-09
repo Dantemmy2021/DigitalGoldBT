@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.notebook{max-width:800px;margin:25px auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.2);border:1px solid #ddd;}
+.nb-top{background:#0d47a1;color:#fff;padding:10px 15px;display:flex;justify-content:space-between;font-size:13px;}
+.nb-paper{background-color:#fffefa;background-image:linear-gradient(90deg,transparent 70px,#ff5a5a 70px,#ff5a5a 72px,transparent 72px),linear-gradient(rgba(0,120,255,.25) 1px,transparent 1px);background-size:100% 28px;padding:0 20px 30px 90px;line-height:28px;font-family:'Segoe Print','Comic Sans MS',cursive;min-height:400px;}
+.nb-title{display:inline-block;background:#ffeb3b;padding:4px 12px;margin:15px 0 10px;font-weight:bold;transform:rotate(-1deg);border:1px solid #e0c000;}
+.nb-paper img{max-width:85%!important;height:auto!important;background:#fff;padding:8px 8px 28px 8px!important;border:1px solid #ddd!important;box-shadow:4px 8px 15px rgba(0,0,0,.3)!important;transform:rotate(-1deg);margin:18px 0!important;display:block;}
+</style>
+
+<div class="container mt-3">
+    <a href="{% url 'results:student_notes' school.slug %}" class="btn btn-sm btn-light mb-2">← Back to Notes</a>
+    <div class="notebook">
+        <div class="nb-top">
+            <div><b>{{ note.subject.name }}</b> - {{ note.title }}</div>
+            <div>{{ note.uploaded_at|date:"M d, Y h:i A" }}</div>
+        </div>
+        <div class="nb-paper">
+            <div class="nb-title">{{ note.title }}</div>
+            <div style="font-family:Arial;font-size:12px;color:#777;margin-bottom:8px;">By: {{ note.teacher.full_name }} | {{ note.term }} {{ note.session }}</div>
+            <div>{{ note.note|safe }}</div>
+            {% if note.file %}
+            <div style="margin-top:20px;font-family:Arial;background:#fff;border:2px dashed #aaa;padding:8px 12px;display:inline-block;">
+                📎 <a href="{{ note.file.url }}" target="_blank"><b>Download Attached File</b></a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

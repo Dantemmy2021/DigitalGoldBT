@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:1000px; margin:20px auto; padding:20px;">
+  <h2 style="color:{{ primary_color }}">{{ class_obj.name }} - Psychomotor Rating</h2>
+  <p><a href="{% url 'results:psychomotor_class_list' school_slug=school.slug %}">← Back</a></p>
+  
+  <form method="get" style="margin:15px 0;">
+    <label>Term: <select name="term" onchange="this.form.submit()"><option>1st Term</option><option>2nd Term</option><option>3rd Term</option></select></label>
+    <label>Session: <input type="text" name="session" value="{{ session }}"></label>
+  </form>
+
+  <table border="1" cellpadding="10" style="width:100%; border-collapse:collapse;">
+    <tr style="background:var(--primary); color:white;"><th>S/N</th><th>Name</th><th>Admission No</th><th>Status</th><th>Action</th></tr>
+    {% for s in students %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ s.full_name }}</td>
+      <td>{{ s.admission_no }}</td>
+      <td>Ready</td>
+      <td><a href="{% url 'results:rate_psychomotor' school_slug=school.slug student_id=s.id %}?term={{ term }}&session={{ session }}" style="background:var(--primary); color:white; padding:5px 12px; border-radius:4px; text-decoration:none;">Rate</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

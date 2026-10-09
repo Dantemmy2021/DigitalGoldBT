@@ -1,0 +1,148 @@
+{% load static dict_extras %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>{{ student.full_name }} - Result</title>
+<style>
+  @page { size: A4 landscape; margin: 0.4cm; }
+  body { font-family: 'Times New Roman', serif; font-size: 10px; margin:0; padding:15px; color:#000; background: #f0f2f5; }
+  .result-box { background: white; padding: 15px 20px; border-radius: 6px; max-width: 1200px; margin: auto; border:1px solid #ddd; position: relative; overflow: hidden; }
+  
+  /* WATERMARK - INSIDE BOX */
+  .watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.14;
+    z-index: 0;
+    pointer-events: none;
+    width: 500px;
+    text-align: center;
+  }
+  .watermark img { width: 100%; height: auto; max-width: 480px; }
+  .header, .student-info, table, .psycho-box, .comment-section, .signature-table, .footer-note { position: relative; z-index: 1; }
+
+  .header { text-align: center; margin-bottom: 8px; }
+  .header img { height: 50px; margin-bottom: 3px; }
+  .header h2 { color: {{ school.primary_color|default:"#5a0a0a" }}; margin:0; text-transform: uppercase; font-size: 16px; }
+  .header h3 { margin:3px 0 10px 0; font-size: 12px; }
+  .student-info { margin-bottom: 10px; display: flex; justify-content: space-between; align-items:center; background: #f8f9fa; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
+  .student-info p { margin: 2px 0; }
+  .att-box { text-align:center; background:white; border:1px solid #999; padding:5px 10px; border-radius:5px; min-width:200px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; background: rgba(255,255,255,0.85); }
+  th, td { border: 1px solid #888; padding: 4px 3px; text-align: center; }
+  th { background: {{ school.primary_color|default:"#5a0a0a" }}; color: white; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  td.subject { text-align: left; padding-left: 5px; }
+  .total-row { font-weight: bold; background: #e3f2fd; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .term-col { background: #e8f4f8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cum-col { background: #fff8dc !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .comment-section { margin-top: 12px; padding-top: 8px; border-top: 2px solid {{ school.primary_color|default:'#5a0a0a' }}; }
+  .comment-box { border: 1px solid #999; min-height: 28px; padding: 5px 8px; border-radius: 3px; font-size: 10px; background:rgba(250,250,250,0.9); margin-bottom: 8px; }
+  .footer-note { text-align: center; margin-top: 8px; font-style: italic; color: #555; font-size: 9px; }
+  .action-btns { text-align: center; margin-top: 15px; display: flex; gap:10px; justify-content:center; position: relative; z-index: 1; }
+  .action-btns a, .action-btns button { padding: 8px 20px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; text-decoration:none; }
+  .btn-print { background: {{ school.primary_color|default:"#5a0a0a" }}; }
+  .btn-download { background: #198754; }
+  .psycho-box { margin-top:12px; display:flex; gap:15px; flex-wrap:wrap; }
+  .psycho-box table { margin-top:4px; }
+
+  @media print {
+    @page { margin: 0.3cm; }
+    body { background: white; padding: 0; margin:0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .result-box { box-shadow: none; border:none; max-width: 100%; padding: 8px 10px; zoom: 0.85; }
+    .action-btns, .no-print { display: none !important; }
+    .watermark { opacity: 0.16 !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .watermark img { width: 450px !important; }
+    table { font-size: 8.5px; margin-top: 5px; }
+    th, td { padding: 2px 3px; }
+    .comment-section, .signature-table, .psycho-box { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+  <div class="result-box">
+    <div class="watermark">{% if school.logo %}<img src="{{ school.logo.url }}">{% endif %}</div>
+
+    <div class="header">
+      <div class="no-print" style="text-align:center; margin-bottom:15px;">
+        <form method="GET" style="display:inline-flex; gap:10px; align-items:center; background:#eef2f7; padding:8px 15px; border-radius:20px;">
+            <label style="font-weight:bold; font-size:12px;">Term:</label>
+            <select name="term" onchange="this.form.submit()" style="padding:5px 10px; border-radius:4px; border:1px solid #999;">
+                <option value="First Term" {% if term == 'First Term' %}selected{% endif %}>First Term</option>
+                <option value="Second Term" {% if term == 'Second Term' %}selected{% endif %}>Second Term</option>
+                <option value="Third Term" {% if term == 'Third Term' %}selected{% endif %}>Third Term</option>
+            </select>
+            <label style="font-weight:bold; font-size:12px; margin-left:10px;">Session:</label>
+            <select name="session" onchange="this.form.submit()" style="padding:5px 10px; border-radius:4px; border:1px solid #999;">
+                {% for s in all_sessions %}<option value="{{ s }}" {% if session == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            </select>
+            <button type="submit" style="background:{{ school.primary_color|default:'#5a0a0a' }}; color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer;">View</button>
+        </form>
+      </div>
+      {% if school.logo %}<img src="{{ school.logo.url }}" style="height:50px;">{% endif %}
+      <h2>{{ school.name }}</h2>
+      <h3>STUDENT RESULT - {{ term }} {{ session }}</h3>
+    </div>
+
+    <!-- STUDENT INFO + ATTENDANCE -->
+    <div class="student-info">
+      <div>
+        <p><b>Name:</b> {{ student.full_name }}</p>
+        <p><b>Admission No:</b> {{ student.admission_no }}</p>
+      </div>
+      
+      <div class="att-box">
+        {% if attendance and attendance.opened %}
+          <p style="margin:0; font-size:10px;"><b>Opened:</b> {{ attendance.opened }} | <b>Present:</b> {{ attendance.present }} | <b>Absent:</b> {{ attendance.absent }}</p>
+          <p style="margin:2px 0 0 0; font-size:11px; font-weight:bold; color:{{ school.primary_color|default:'#5a0a0a' }};">Attendance: {{ attendance.percentage }}% {% if attendance.late %}<span style="font-weight:normal; font-size:10px;">({{ attendance.late }} Late)</span>{% endif %}</p>
+        {% else %}
+          <p style="margin:0; font-size:10px;">Attendance: <i>No record for {{ term }}</i></p>
+        {% endif %}
+      </div>
+
+      <div style="text-align:right;">
+        <p><b>Class:</b> {{ student.student_class }}</p>
+        <p><b>Term:</b> {{ term }}</p>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>S/N</th><th>SUBJECT</th>{% for comp in components %}<th>{{ comp.name|upper }}<br><small>/{{ comp.max_score }}</small></th>{% endfor %}<th>TOTAL<br>({{ term }})</th>{% if is_third_term %}<th class="term-col">1ST TERM %</th><th class="term-col">2ND TERM %</th><th class="cum-col">CUM AVG</th><th class="cum-col">CUM GRADE</th>{% else %}<th>GRADE</th>{% endif %}<th>REMARK</th></tr>
+      </thead>
+      <tbody>
+        {% for data in results_data %}
+        <tr><td>{{ forloop.counter }}</td><td class="subject">{{ data.subject }}</td>{% for comp in components %}<td>{{ data.components|dict_get:comp.name|default:"-" }}</td>{% endfor %}<td><strong>{{ data.total|floatformat:1|default:"-" }}</strong></td>{% if is_third_term %}<td class="term-col">{{ data.total_first_term|floatformat:1|default:"-" }}</td><td class="term-col">{{ data.total_second_term|floatformat:1|default:"-" }}</td><td class="cum-col">{{ data.cumulative_avg|floatformat:1|default:"-" }}</td><td class="cum-col">{{ data.cum_grade|default:"-" }}</td><td>{{ data.cum_remark|default:"-" }}</td>{% else %}<td><strong>{{ data.grade|default:"-" }}</strong></td><td>{{ data.remark|default:"-" }}</td>{% endif %}</tr>
+        {% endfor %}
+        <tr class="total-row"><td colspan="{{ components|length|add:2 }}">TOTAL / AVERAGE</td><td>{{ total_score|floatformat:1 }}</td>{% if is_third_term %}<td colspan="2">3rd Term Avg: {{ average }}%</td><td colspan="3" style="color:#7a0c2e;">CUMULATIVE AVG: {{ cumulative_avg }}%</td>{% else %}<td colspan="2">AVERAGE: {{ average }}%</td>{% endif %}</tr>
+      </tbody>
+    </table>
+
+    {% if psychomotor %}
+    <div class="psycho-box">
+      <div style="flex:1; min-width:200px;"><h4 style="margin:0; background:{{ school.primary_color|default:'#5a0a0a' }}; color:white; padding:5px; text-align:center;">AFFECTIVE DOMAIN</h4>
+        <table><tr><th style="text-align:left;">Trait</th><th>Rating (1-5)</th></tr><tr><td style="text-align:left;">Punctuality</td><td><b>{{ psychomotor.punctuality|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Neatness</td><td><b>{{ psychomotor.neatness|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Honesty</td><td><b>{{ psychomotor.honesty|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Politeness</td><td><b>{{ psychomotor.politeness|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Attentiveness</td><td><b>{{ psychomotor.attentiveness|default:"-" }}</b></td></tr></table>
+      </div>
+      <div style="flex:1; min-width:200px;"><h4 style="margin:0; background:{{ school.primary_color|default:'#5a0a0a' }}; color:white; padding:5px; text-align:center;">PSYCHOMOTOR SKILLS</h4>
+        <table><tr><th style="text-align:left;">Skill</th><th>Rating (1-5)</th></tr><tr><td style="text-align:left;">Handwriting</td><td><b>{{ psychomotor.handwriting|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Games & Sports</td><td><b>{{ psychomotor.games_sports|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Handling Tools</td><td><b>{{ psychomotor.handling_tools|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Drawing & Painting</td><td><b>{{ psychomotor.drawing|default:"-" }}</b></td></tr><tr><td style="text-align:left;">Leadership</td><td><b>{{ psychomotor.leadership|default:"-" }}</b></td></tr></table>
+      </div>
+    </div>
+    <p style="font-size:9px; margin:4px 0 0 0;"><b>Key:</b> 5=Excellent, 4=Very Good, 3=Good, 2=Fair, 1=Poor</p>
+    {% endif %}
+
+    <div class="comment-section">
+        <p style="font-weight:bold; margin:0 0 4px 0; font-size:11px;">Class Teacher's Comment:</p>
+        <div class="comment-box">{% if is_third_term %}{% if cumulative_avg >= 80 %}Excellent performance! {{ student.full_name }} is outstanding. Keep it up!{% elif cumulative_avg >= 70 %}Very good result. {{ student.full_name }} is hardworking. Keep it up.{% elif cumulative_avg >= 60 %}Good result. Work harder in weak subjects.{% elif cumulative_avg >= 50 %}Fair result. Be more serious.{% elif cumulative_avg >= 40 %}Below average. Improve attitude.{% else %}Poor result. You can do better.{% endif %}{% else %}{% if average >= 80 %}Excellent performance! Outstanding student.{% elif average >= 70 %}Very good result. Keep it up.{% elif average >= 60 %}Good result. Work harder.{% elif average >= 50 %}Fair result. More seriousness needed.{% elif average >= 40 %}Below average. Improve.{% else %}Poor result. Needs improvement.{% endif %}{% endif %}</div>
+        <p style="font-weight:bold; margin:8px 0 4px 0; font-size:11px;">Principal's Comment:</p>
+        <div class="comment-box">{% if is_third_term %}{% if cumulative_avg >= 80 %}Outstanding! Very proud. Promoted.{% elif cumulative_avg >= 70 %}Very good. Promoted.{% elif cumulative_avg >= 60 %}Good. Promoted.{% elif cumulative_avg >= 50 %}Fair. Promoted on trial.{% elif cumulative_avg >= 40 %}Below average. Work harder.{% else %}Poor. To repeat.{% endif %}{% else %}{% if average >= 80 %}Outstanding! Keep it up.{% elif average >= 70 %}Very good. Keep it up.{% elif average >= 60 %}Good. Room for improvement.{% elif average >= 50 %}Fair. More effort needed.{% elif average >= 40 %}Below average. Work harder.{% else %}Poor. Needs serious improvement.{% endif %}{% endif %}</div>
+        {% if school.next_term_resumption_date %}<p style="margin-top:6px; font-size:10px;"><b>Next Term Begins:</b> {{ school.next_term_resumption_date|date:"D, d M Y" }}</p>{% endif %}
+    </div>
+
+    <table class="signature-table" style="width:100%; border:none; margin-top:12px;"><tr><td style="border:none; width:50%; text-align:left; vertical-align:bottom;"><p style="margin:0 0 3px 0; font-size:10px;"><b>Class Teacher's Signature:</b></p>{% if student.student_class.class_teacher.teacherprofile.signature %}<img src="{{ student.student_class.class_teacher.teacherprofile.signature.url }}" style="height:40px;">{% endif %}<div style="border-bottom:1px solid #000; width:250px; margin-top:5px;"></div><p style="margin:2px 0 0 0; font-size:10px; text-transform:uppercase;">{{ student.student_class.class_teacher.get_full_name|default:"CLASS TEACHER" }}</p></td><td style="border:none; width:50%; text-align:center; vertical-align:bottom;"><p style="margin:0 0 3px 0; font-size:10px;"><b>Principal's Signature:</b></p>{% if school.principal_signature %}<img src="{{ school.principal_signature.url }}" style="height:45px;">{% endif %}<div style="border-bottom:1px solid #000; width:250px; margin: 0 auto;"></div><b style="font-size:10px; text-transform:uppercase;">{{ school.principal_name|default:"PRINCIPAL" }}</b></td></tr></table>
+    <p class="footer-note">This is a computer generated result and is valid without signature</p>
+    <div class="action-btns"><button class="btn-print" onclick="window.print()">🖨️ Print</button><a class="btn-download" href="{% url 'results:parent_download_result' school_slug=school.slug student_id=student.id %}?term={{ term }}&session={{ session }}">⬇️ Download PDF</a></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Teacher's Notes for {{ student.full_name }}</h2>
+{% if notes %}
+    {% for note in notes %}
+        <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+            <b>{{ note.date|date:"d M Y" }} - {{ note.subject.name }}</b><br>
+            {{ note.note }}
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No notes from teachers this term yet.</p>
+{% endif %}
+<a href="{% url 'results:student_dashboard' school_slug=school.slug %}">Back to Dashboard</a>
+{% endblock %}

@@ -1,67 +1,114 @@
-{% extends "admin/base_site.html" %}
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard{% endblock %}
 {% block content %}
 <style>
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
-    .btn { padding: 6px 12px; text-decoration: none; border-radius: 4px; color: white; display: inline-block; margin: 2px; font-size: 12px; }
-    .btn-enter { background: #007bff; }
-    .btn-broadsheet { background: #ffc107; color: #000; }
-    .btn-print { background: #28a745; }
-    table { width:100%; border-collapse: collapse; }
-    th, td { padding:10px; text-align:left; border:1px solid #ddd; }
-    th { background:#f2f2f2; }
+:root { --primary: {{ primary_color }}; }
+.table thead { background: var(--primary); color: white; }
+a { color: var(--primary); }
 </style>
 
-<h1>My Subjects</h1>
-<div class="card">
-    {% for subject in subjects %}
-        <div style="margin-bottom: 10px; padding: 10px; border-bottom: 1px solid #eee;">
-            <strong>{{ subject.name }} - {{ subject.student_class }}</strong>
-            <br>
-            <a href="{% url 'results:enter_scores' subject.id %}" class="btn btn-enter">
-                ✍️ Enter Scores
-            </a>
-            <!-- NEW: BROADSHEET BUTTON -->
-            <a href="{% url 'results:admin_broadsheet' subject.student_class.id %}?term=Third Term" 
-               class="btn btn-broadsheet" target="_blank">
-                📊 Print Broadsheet
-            </a>
-        </div>
-    {% empty %}
-        <p>No subjects assigned to you yet. Go to Admin > Subjects > set Teacher</p>
+<div style="max-width:1000px; margin:20px auto; padding:20px;">
+    <h1 style="color:var(--primary);">{{ school.name }} - Teacher Dashboard</h1>
+    <p>Welcome, <b>{{ teacher.user.get_full_name }}</b> | <a href="{% url 'results:logout' school_slug=school.slug %}" style="color:#ff4d4d; text-decoration:none; font-weight:bold;">Logout</a></p>
+
+    <!-- TEACHER TOOLS -->
+    <div style="background:#f5f5f5; padding:15px; border-radius:8px; margin:20px 0;">
+        <h3 style="margin-top:0; color:var(--primary);">Teacher Tools</h3>
+        <a href="{% url 'results:teacher_give_note' school_slug=school.slug %}" style="display:block; padding:8px; background:white; margin:5px 0; text-decoration:none; border:1px solid #ddd; border-radius:4px;">
+            📝 1. Give Students Note
+        </a>
+        <a href="{% url 'results:teacher_ca_test' school_slug=school.slug %}" style="display:block; padding:8px; background:white; margin:5px 0; text-decoration:none; border:1px solid #ddd; border-radius:4px;">
+            📄 2. Create CA Test
+        </a>
+        <a href="{% url 'results:teacher_take_attendance' school_slug=school.slug %}" style="display:block; padding:8px; background:white; margin:5px 0; text-decoration:none; border:1px solid #ddd; border-radius:4px;">
+            ✅ 3. Take Attendance
+        </a>
+        <a href="{% url 'results:teacher_lesson_plan' school_slug=school.slug %}" style="display:block; padding:8px; background:white; margin:5px 0; text-decoration:none; border:1px solid #ddd; border-radius:4px;">
+            📘 4. Lesson Plan / Scheme of Work
+        </a>
+        
+        <!-- ONLY CLASS TEACHER SEES THIS -->
+        {% if class_teacher_classes %}
+        <a href="{% url 'results:psychomotor_class_list' school_slug=school.slug %}" style="display:block; padding:8px; background:var(--primary); color:white; margin:5px 0; text-decoration:none; border-radius:4px; font-weight:bold;">
+            📝 5. Enter Psychomotor / Character Rating (Class Teacher Only)
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- MY CLASSES AS CLASS TEACHER -->
+    {% if class_teacher_classes %}
+    <h2 style="color:var(--primary);">My Classes as Class Teacher</h2>
+    <ul>
+    {% for c in class_teacher_classes %}
+        <li><b>{{ c.name }} {{ c.arm }}</b> - Class Teacher</li>
     {% endfor %}
-</div>
+    </ul>
+    {% endif %}
 
-<hr style="margin: 30px 0;">
+    <!-- MY CLASSES AS SUBJECT TEACHER -->
+    <h2 style="color:var(--primary);">My Classes (Subject Teacher)</h2>
+    {% if classes %}
+        <ul>
+        {% for c in classes %}
+            <li><b>{{ c.name }} {{ c.arm }}</b> - {{ students_count }} total students in all classes</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No classes assigned to you yet.</p>
+    {% endif %}
 
-<h1>Students in My Classes</h1>
-<div class="card">
-    <table>
-        <thead>
+    <!-- MY SUBJECTS -->
+    <h2 style="margin-top:30px; color:var(--primary);">My Subjects</h2>
+    {% if subjects %}
+        <table border="1" cellpadding="10" style="width:100%; border-collapse:collapse;">
+            <thead><tr><th>S/N</th><th>Subject Name</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for subject in subjects %}
             <tr>
-                <th>Student Name</th>
-                <th>Class</th>
-                <th style="text-align:center;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for student in students %}
-            <tr>
-                <td>{{ student.full_name }}</td>
-                <td>{{ student.student_class.name }}</td>
-                <td style="text-align:center;">
-                    <a href="{% url 'results:print_result' student.id %}" class="btn btn-print">
-                        🖨️ Print Term Result
-                    </a>
-                    <a href="{% url 'results:admin_print_student' student.id %}?term=Third Term" 
-                       class="btn" style="background:#6f42c1;" target="_blank">
-                        📄 Admin Slip
-                    </a>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ subject.name }}</td>
+                <td>
+                    {% for c in classes %}
+                        <a href="{% url 'results:enter_scores' school_slug=school.slug subject_id=subject.id %}?class={{c.id}}">Enter Scores for {{c.name}}</a>{% if not forloop.last %} | {% endif %}
+                    {% endfor %}
                 </td>
             </tr>
-            {% empty %}
-            <tr><td colspan="3">No students found in your classes.</td></tr>
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    {% endif %}
+
+    <!-- STUDENTS - ONLY SHOW RATE BUTTON IF YOU ARE CLASS TEACHER -->
+    <h2 style="margin-top:30px; color:var(--primary);">Students in My Classes</h2>
+    {% if classes %}
+        {% for c in classes %}
+            <h4 style="color:var(--primary);">
+                {{ c.name }} {{ c.arm }}
+                {% if c.class_teacher_id == teacher.id %}
+                - <a href="{% url 'results:psychomotor_student_list' school_slug=school.slug class_id=c.id %}" style="font-size:13px; background:var(--primary); color:white; padding:4px 10px; border-radius:4px; text-decoration:none;">Rate Psychomotor for this Class</a>
+                {% endif %}
+            </h4>
+            <table border="1" cellpadding="10" style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+                <thead><tr><th>S/N</th><th>Admission No</th><th>Student Name</th><th>Action</th></tr></thead>
+                <tbody>
+                {% for student in c.students.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ student.admission_no }}</td>
+                    <td>{{ student.full_name }}</td>
+                    <td>
+                        <a href="{% url 'results:print_result' school_slug=school.slug student_id=student.id %}">View/Print Result</a>
+                        {% if c.class_teacher_id == teacher.id %}
+                        | <a href="{% url 'results:rate_psychomotor' school_slug=school.slug student_id=student.id %}" style="font-weight:bold; color:var(--primary);">Rate Psychomotor</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4">No students in this class</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    {% endif %}
 </div>
 {% endblock %}

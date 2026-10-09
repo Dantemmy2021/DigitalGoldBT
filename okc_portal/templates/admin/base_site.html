@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        {% if request.user.is_superuser %}
+            Super Admin
+        {% elif request.user.teacher %}
+            {{ request.user.teacher.school.name }} Administration
+        {% else %}
+            School Portal Administration
+        {% endif %}
+    </a>
+</h1>
+{% endblock %}
+
+{% block extrastyle %}
+<style>
+#header { background: #004080; } 
+#branding h1 a { color: #FFD700; } 
+.module h2, .module caption { background: #004080; }
+</style>
+{% endblock %}

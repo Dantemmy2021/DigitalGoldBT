@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Teacher ID</title>
+<style>
+  body { font-family:Arial; background:#f5f5f5; margin:0; padding:20px; }
+  .top-bar { background:white; padding:12px 18px; border-radius:8px; margin-bottom:20px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .btn { background:{{ school.secondary_color|default:"#FFD700" }}; color:#000; border:none; padding:8px 16px; border-radius:6px; font-weight:900; text-decoration:none; }
+  .btn.active { background:{{ school.primary_color|default:"#800020" }}; color:white; }
+  .grid { display:flex; flex-wrap:wrap; gap:18px; }
+  .id-card { width:3.37in; min-height:2.55in; height:auto; background:white; border-radius:12px; overflow:hidden; border:2px solid {{ school.primary_color|default:"#800020" }}; display:flex; flex-direction:column; position:relative; }
+  .id-card.portrait { width:2.125in; min-height:3.37in; height:auto; }
+  .id-header { background:{{ school.primary_color|default:"#800020" }}; color:white; display:flex; align-items:center; gap:10px; padding:8px 12px; height:52px; flex-shrink:0; }
+  .id-logo { width:34px; height:34px; background:white; border-radius:50%; padding:2px; object-fit:contain; flex-shrink:0; }
+  .id-school { font-size:9.5px; font-weight:900; line-height:1.1; }
+  .id-school span { font-size:7px; font-weight:700; opacity:0.95; display:block; margin-top:4px; letter-spacing:0.5px; }
+  .id-body { display:flex; padding:10px; gap:10px; flex:0 0 auto; }
+  .photo-wrap { width:0.82in; height:0.95in; border:2px solid {{ school.primary_color|default:"#800020" }}; border-radius:6px; overflow:hidden; background:#f2f2f2; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .photo-wrap img { width:100%; height:100%; object-fit:cover; }
+  .info { flex:1; font-size:9.5px; line-height:1.55; font-weight:800; }
+  .info b { display:block; font-size:11.5px; color:#000; margin-bottom:2px; }
+  .id-qr { width:0.42in; height:0.42in; border:1px solid #ddd; padding:2px; background:white; border-radius:4px; display:block; }
+  .id-qr-wrap { display:flex; justify-content:flex-end; padding:0 20px 0 0; margin-top:auto; margin-bottom:22px; }
+  .id-footer { background:#111; color:white; text-align:center; font-size:8px; padding:8px 4px; font-weight:800; flex-shrink:0; margin-top:auto; letter-spacing:0.3px; line-height:1.2; }
+  .id-card.portrait .id-body { flex-direction:column; align-items:center; text-align:center; }
+  .id-card.portrait .id-qr-wrap { justify-content:center; padding:0; margin-bottom:22px; }
+  .id-card.portrait .id-qr { width:0.52in; height:0.52in; }
+  .back-body { padding:10px 12px 8px; font-size:7.5px; line-height:1.5; flex:1; display:flex; flex-direction:column; }
+  .back-body h4 { margin:0 0 8px; font-size:8.5px; color:{{ school.primary_color|default:"#800020" }}; text-align:center; border-bottom:1px dashed {{ school.primary_color|default:"#800020" }}; padding-bottom:4px; }
+  .back-body ul { margin:0; padding-left:12px; }
+  .back-sign { display:flex; justify-content:space-between; margin-top:auto; padding-top:20px; padding-bottom:10px; font-size:6px; }
+  .sign-box { text-align:center; min-width:80px; position:relative; height:50px; display:flex; flex-direction:column; justify-content:flex-end; }
+  .sign-img { height:32px; max-width:85px; object-fit:contain; display:block; margin:0 auto; position:absolute; bottom:14px; left:50%; transform:translateX(-50%); }
+  .sign-line { border-top:1px solid #000; padding-top:2px; margin-top:auto; min-width:75px; }
+  @media print { 
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  .no-print { display:none !important; } 
+  body { background:white; padding:0; margin:0; } 
+  .grid { gap:10px; } 
+  .id-card { border:2px solid {{ school.primary_color|default:"#800020" }} !important; -webkit-print-color-adjust: exact !important; }
+  .id-header { background:{{ school.primary_color|default:"#800020" }} !important; color:white !important; }
+  .id-footer { background:#111 !important; color:white !important; }
+}
+</style>
+</head>
+<body>
+<div class="top-bar no-print">
+  <span>{{ school.name }} - {{ teachers|length }} Teachers - {{ layout|upper }}</span>
+  <div style="margin-left:auto; display:flex; gap:6px;">
+    <a class="btn {% if layout == 'landscape' %}active{% endif %}" href="?layout=landscape">Landscape</a>
+    <a class="btn {% if layout == 'portrait' %}active{% endif %}" href="?layout=portrait">Portrait</a>
+    <a class="btn {% if layout == 'back' %}active{% endif %}" href="?layout=back">Back (Land)</a>
+    <a class="btn {% if layout == 'portrait_back' %}active{% endif %}" href="?layout=portrait_back">Back (Port)</a>
+    <button class="btn" style="background:{{ school.primary_color|default:"#800020" }};color:white;" onclick="window.print()">Print All</button>
+  </div>
+</div>
+<div class="grid">
+{% for t in teachers %}
+  {% if layout == 'back' or layout == 'portrait_back' %}
+    <div class="id-card {% if layout == 'portrait_back' %}portrait{% endif %}">
+      <div class="id-header"><img src="{% if school.logo %}{{ school.logo.url }}{% endif %}" class="id-logo"><div class="id-school">{{ school.name|truncatechars:22|upper }}<br><span>{{ school.motto|default:"IN CHRIST WE STAND"|upper }}</span></div></div>
+      <div class="back-body">
+        <h4>Staff ID - Terms</h4>
+        <ul>
+          <li>Property of {{ school.name }}. Must be returned on resignation.</li>
+          <li>Must be worn on school premises.</li>
+          <li>Valid for Session {{ school.current_session }}</li>
+          <li>Emergency: {{ school.phone|default:"07036853721" }}</li>
+          <li>Staff ID: {{ t.display_id }}</li>
+        </ul>
+        <div class="back-sign">
+          <div class="sign-box">
+            {% if principal_signature_url %}<img src="{{ principal_signature_url }}" class="sign-img">{% endif %}
+            <div class="sign-line">Principal Sign</div>
+          </div>
+          <div class="sign-box">
+            {% if t.signature_url %}<img src="{{ t.signature_url }}" class="sign-img">{% endif %}
+            <div class="sign-line">Staff Sign</div>
+          </div>
+        </div>
+      </div>
+      <div class="id-footer">Scan to verify • {{ school.phone|default:"07036853721" }}</div>
+    </div>
+  {% else %}
+    <div class="id-card {{ layout }}">
+      <div class="id-header"><img src="{% if school.logo %}{{ school.logo.url }}{% endif %}" class="id-logo"><div class="id-school">{{ school.name|truncatechars:22|upper }}<br><span>{{ school.motto|default:"IN CHRIST WE STAND"|upper }}</span></div></div>
+      <div class="id-body">
+        <div class="photo-wrap">{% if t.photo_url %}<img src="{{ t.photo_url }}">{% else %}👨‍🏫{% endif %}</div>
+        <div class="info"><b>{{ t.full_name|truncatechars:22 }}</b>ID: {{ t.display_id }}<br>Role: {{ t.role|default:"Teacher" }}<br>Phone: {{ t.phone|default:"07031234567" }}</div>
+      </div>
+      <div class="id-qr-wrap"><img src="{{ t.qr_code }}" class="id-qr"></div>
+      <div class="id-footer">Scan to verify • {{ school.phone|default:"07036853721" }}</div>
+    </div>
+  {% endif %}
+{% endfor %}
+</div>
+</body>
+</html>

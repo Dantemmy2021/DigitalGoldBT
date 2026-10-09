@@ -1,4 +1,4 @@
-{% load static %}
+{% load dict_extras %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,71 +7,187 @@
         body { font-family: Arial; margin: 40px; font-size: 12px; }
         .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .header img { height: 80px; display: block; margin: 0 auto 10px; }
-        .student-info { margin: 20px 0; font-size: 14px; }
-        .summary { margin: 15px 0; border: 1px solid #000; padding: 10px; font-weight: bold; }
+        .student-info { margin: 20px 0; font-size: 14px; line-height:1.6; }
+        .summary { margin: 15px 0; border: 1px solid #000; padding: 10px; font-weight: bold; background: #f9f9f9; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         table, th, td { border: 1px solid #000; }
         th, td { padding: 6px; text-align: center; }
         th { background: #f2f2f2; }
-        .print-btn { margin: 20px 0; padding: 10px 20px; background: #dc3545; color: white; border: none; cursor: pointer; }
-        @media print { .print-btn { display: none; } body { margin: 10px; }
+        .print-btn { margin: 20px 0; padding: 10px 20px; background: #004080; color: white; border: none; cursor: pointer; border-radius: 5px; }
+        .comment-box { border: 1px solid #ccc; padding: 10px; background:#f9f9f9; min-height:40px; text-align:left; margin-top:10px; }
+        .psycho-table th { background: #004080; color: white; }
+        .psycho-table td { text-align: center; }
+        .psycho-table td:first-child { text-align: left; }
+        @media print { .print-btn, form { display: none; } body { margin: 10px; } }
     </style>
 </head>
 <body>
     <div class="header">
-        <img src="{% static 'images/okc_logo.png' %}" alt="OKC School Logo">
-        <h2>OKC SCHOOL PORTAL</h2>
-        <p>No. 1 School Road, Ikorodu, Lagos State</p>
-        <h3>STUDENT RESULT SLIP - ADMIN COPY</h3>
+        {% if school.logo %}<img src="{{ school.logo.url }}" alt="{{school.name}} Logo">{% endif %}
+        <h2>{{ school.name|upper }}</h2>
+        <p>{{ school.address|default:"School Address" }}</p>
+        <h3>STUDENT RESULT SLIP</h3>
         <p><b>{{ term }} - {{ session }}</b></p>
     </div>
 
+    <form method="get">
+        <label><b>Term:</b></label>
+        <select name="term" onchange="this.form.submit()">
+            {% for t in term_choices %}<option value="{{t.0}}" {% if t.0 == term %}selected{% endif %}>{{t.1}}</option>{% endfor %}
+        </select>
+        <label><b>Session:</b></label>
+        <select name="session" onchange="this.form.submit()">
+            {% for s in session_choices %}<option value="{{s.0}}" {% if s.0 == session %}selected{% endif %}>{{s.1}}</option>{% endfor %}
+        </select>
+    </form>
+
     <div class="student-info">
         <b>Name:</b> {{ student.full_name }} <br>
-        <b>Class:</b> {{ student.student_class.name }} <br>
-        <b>Admission No:</b> {{ student.admission_number|default:"N/A" }}
+        <b>Class:</b> {{ student.student_class }} <br>
+        <b>Admission No:</b> {{ student.admission_no|default:"N/A" }}
     </div>
 
     <button class="print-btn" onclick="window.print()">🖨️ Print Full Result</button>
 
     <table>
+        <thead>
         <tr>
             <th>S/N</th>
-            <th>Subject</th>
-            <th>CA1</th>
-            <th>CA2</th>
-            <th>Proj</th>
-            <th>Ass</th>
-            <th>Exam</th>
-            <th>Total</th>
-            <th>Grade</th>
+            <th style="text-align:left">Subject</th>
+            {% for comp in components %}
+                <th>{{ comp.name }}<br><small>Max:{{comp.max_score}}</small></th>
+            {% endfor %}
+            <th>Total<br>({{ term }})</th>
+            {% if is_third_term %}
+                <th style="background:#0d2a54; color:white;">1ST<br>TERM %</th>
+                <th style="background:#0d2a54; color:white;">2ND<br>TERM %</th>
+                <th style="background:#000; color:white;">CUM<br>AVG</th>
+                <th style="background:#000; color:white;">CUM GRADE</th>
+            {% else %}
+                <th>Grade</th>
+            {% endif %}
             <th>Remark</th>
         </tr>
+        </thead>
+        <tbody>
         {% for data in results_data %}
         <tr>
             <td>{{ forloop.counter }}</td>
             <td style="text-align:left">{{ data.subject }}</td>
-            <td>{{ data.ca1 }}</td>
-            <td>{{ data.ca2 }}</td>
-            <td>{{ data.project }}</td>
-            <td>{{ data.assignment }}</td>
-            <td>{{ data.exam }}</td>
-            <td><b>{{ data.total }}</b></td>
-            <td><b>{{ data.grade }}</b></td>
-            <td>{{ data.remark }}</td>
+            {% for comp in components %}
+                <td>{{ data.components|dict_get:comp.name|floatformat:1|default:"-" }}</td>
+            {% endfor %}
+            <td><b>{{ data.total|floatformat:1 }}</b></td>
+            {% if is_third_term %}
+                <td style="background:#e8f4f8;">{{ data.term1|floatformat:1|default:"-" }}</td>
+                <td style="background:#e8f4f8;">{{ data.term2|floatformat:1|default:"-" }}</td>
+                <td style="background:#fff8dc"><b>{{ data.cumulative|floatformat:1 }}</b></td>
+                <td style="background:#fff8dc"><b>{{ data.cum_grade }}</b></td>
+                <td>{{ data.cum_remark }}</td>
+            {% else %}
+                <td><b>{{ data.grade }}</b></td>
+                <td>{{ data.remark }}</td>
+            {% endif %}
         </tr>
         {% empty %}
-        <tr><td colspan="10">No scores entered yet for {{ term }}</td></tr>
+        <tr><td colspan="20">No scores entered yet for {{ term }}</td></tr>
         {% endfor %}
+        </tbody>
     </table>
 
     <div class="summary">
-        GRAND TOTAL: {{ total_score }} &nbsp;&nbsp;&nbsp;
-        AVERAGE: {{ average }}% &nbsp;&nbsp;&nbsp;
-        POSITION: {{ position }}
+        {% if is_third_term %}
+            TERM TOTAL (3rd Term Only): {{ total_score|floatformat:1 }} &nbsp; | &nbsp;
+            TERM AVERAGE (3rd Only): {{ average }}% &nbsp; | &nbsp;
+            <span style="color:#7a0c2e;">CUMULATIVE AVG (1st+2nd+3rd)/3: {{ cumulative_avg }}%</span>
+        {% else %}
+            TERM TOTAL: {{ total_score|floatformat:1 }} &nbsp;&nbsp;&nbsp;
+            AVERAGE: {{ average }}%
+        {% endif %}
     </div>
 
-    <div style="margin-top:40px;">
+    <!-- ===== PSYCHOMOTOR / AFFECTIVE DOMAIN - SINGLE CLEAN VERSION ===== -->
+    {% if psychomotor %}
+    <div style="margin-top:25px; display:flex; gap:20px; flex-wrap:wrap; page-break-inside:avoid;">
+        <div style="flex:1; min-width:250px;">
+            <h4 style="margin-bottom:5px; background:#004080; color:white; padding:6px; text-align:center;">AFFECTIVE DOMAIN</h4>
+            <table class="psycho-table">
+                <tr><th style="text-align:left;">Trait</th><th>Rating (1-5)</th></tr>
+                <tr><td>Punctuality</td><td><b>{{ psychomotor.punctuality|default:"-" }}</b></td></tr>
+                <tr><td>Neatness</td><td><b>{{ psychomotor.neatness|default:"-" }}</b></td></tr>
+                <tr><td>Honesty</td><td><b>{{ psychomotor.honesty|default:"-" }}</b></td></tr>
+                <tr><td>Politeness</td><td><b>{{ psychomotor.politeness|default:"-" }}</b></td></tr>
+                <tr><td>Attentiveness</td><td><b>{{ psychomotor.attentiveness|default:"-" }}</b></td></tr>
+            </table>
+        </div>
+        <div style="flex:1; min-width:250px;">
+            <h4 style="margin-bottom:5px; background:#004080; color:white; padding:6px; text-align:center;">PSYCHOMOTOR SKILLS</h4>
+            <table class="psycho-table">
+                <tr><th style="text-align:left;">Skill</th><th>Rating (1-5)</th></tr>
+                <tr><td>Handwriting</td><td><b>{{ psychomotor.handwriting|default:"-" }}</b></td></tr>
+                <tr><td>Games & Sports</td><td><b>{{ psychomotor.games_sports|default:"-" }}</b></td></tr>
+                <tr><td>Handling Tools</td><td><b>{{ psychomotor.handling_tools|default:"-" }}</b></td></tr>
+                <tr><td>Drawing & Painting</td><td><b>{{ psychomotor.drawing|default:"-" }}</b></td></tr>
+                <tr><td>Leadership</td><td><b>{{ psychomotor.leadership|default:"-" }}</b></td></tr>
+            </table>
+            <p style="font-size:10px; margin-top:5px;"><b>Key:</b> 5=Excellent, 4=Very Good, 3=Good, 2=Fair, 1=Poor</p>
+        </div>
+    </div>
+    {% else %}
+    <div style="margin-top:20px; padding:10px; border:1px dashed #999; text-align:center; color:#666;">
+        No Psychomotor rating entered for {{ term }} - {{ session }}. <a href="/{{ school.slug }}/portal/teacher/psychomotor/rate/{{ student.id }}/?term={{ term }}&session={{ session }}">Rate Now</a>
+    </div>
+    {% endif %}
+    <!-- ===== END PSYCHOMOTOR ===== -->
+
+    <div style="margin-top:25px;">
+        <p><b>Class Teacher's Comment:</b></p>
+        <div class="comment-box">
+            {% if is_third_term %}
+                {% if cumulative_avg >= 80 %} Excellent! Outstanding and exemplary student.
+                {% elif cumulative_avg >= 70 %} Very good. Hardworking and well-behaved.
+                {% elif cumulative_avg >= 60 %} Good, but needs to work harder.
+                {% elif cumulative_avg >= 50 %} Fair. Needs more effort.
+                {% elif cumulative_avg >= 40 %} Below average. Needs to improve.
+                {% else %} Poor. Needs serious attention.
+                {% endif %}
+            {% else %}
+                {% if average >= 80 %} Excellent! Outstanding and exemplary student.
+                {% elif average >= 70 %} Very good. Hardworking and well-behaved.
+                {% elif average >= 60 %} Good, but needs to work harder.
+                {% elif average >= 50 %} Fair. Needs more effort.
+                {% elif average >= 40 %} Below average. Needs to improve.
+                {% else %} Poor. Needs serious attention.
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <p style="margin-top:15px;"><b>Principal's Comment:</b></p>
+        <div class="comment-box">
+            {% if is_third_term %}
+                {% if cumulative_avg >= 80 %} An outstanding performance! Keep up the excellent work.
+                {% elif cumulative_avg >= 70 %} A very good performance. Keep it up.
+                {% elif cumulative_avg >= 60 %} Good performance. Room for improvement.
+                {% elif cumulative_avg >= 50 %} Fair performance. More effort needed.
+                {% elif cumulative_avg >= 40 %} Below average. Work harder.
+                {% else %} Poor performance. Needs serious improvement.
+                {% endif %}
+            {% else %}
+                {% if average >= 80 %} An outstanding performance! Keep up the excellent work.
+                {% elif average >= 70 %} A very good performance. Keep it up.
+                {% elif average >= 60 %} Good performance. Room for improvement.
+                {% elif average >= 50 %} Fair performance. More effort needed.
+                {% elif average >= 40 %} Below average. Work harder.
+                {% else %} Poor performance. Needs serious improvement.
+                {% endif %}
+            {% endif %}
+        </div>
+        {% if school.next_term_resumption_date %}
+        <p style="margin-top:8px;"><b>Next Term Begins:</b> {{ school.next_term_resumption_date|date:"D, d M Y" }}</p>
+        {% endif %}
+    </div>
+
+    <div style="margin-top:40px; display:flex; justify-content:space-between;">
         <p>Class Teacher's Signature: ____________________</p>
         <p>Principal's Signature & Stamp: ____________________</p>
     </div>

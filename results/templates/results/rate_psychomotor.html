@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .rating-select { padding:8px; width:100%; border:1px solid #ccc; border-radius:4px; }
+  .card { background:white; padding:20px; border-radius:8px; border:1px solid #ddd; margin-bottom:20px; }
+</style>
+<div style="max-width:700px; margin:20px auto; padding:20px;">
+  <h2 style="color:var(--primary);">Rate: {{ student.full_name }} ({{ student.student_class.name }})</h2>
+  <p>Term: <b>{{ term }}</b> | Session: <b>{{ session }}</b></p>
+  <p><a href="{% url 'results:psychomotor_student_list' school_slug=school.slug class_id=student.student_class.id %}">← Back to List</a></p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="card">
+      <h3>AFFECTIVE DOMAIN</h3>
+      <label>Punctuality <select name="punctuality" class="rating-select"><option value="5" {% if obj.punctuality == 5 %}selected{% endif %}>5 - Excellent</option><option value="4" {% if obj.punctuality == 4 %}selected{% endif %}>4 - Very Good</option><option value="3" {% if obj.punctuality == 3 %}selected{% endif %}>3 - Good</option><option value="2" {% if obj.punctuality == 2 %}selected{% endif %}>2 - Fair</option><option value="1" {% if obj.punctuality == 1 %}selected{% endif %}>1 - Poor</option></select></label><br><br>
+      <label>Neatness <select name="neatness" class="rating-select"><option value="5" {% if obj.neatness == 5 %}selected{% endif %}>5</option><option value="4" {% if obj.neatness == 4 %}selected{% endif %}>4</option><option value="3" {% if obj.neatness == 3 %}selected{% endif %}>3</option><option value="2" {% if obj.neatness == 2 %}selected{% endif %}>2</option><option value="1" {% if obj.neatness == 1 %}selected{% endif %}>1</option></select></label><br><br>
+      <label>Honesty <select name="honesty" class="rating-select">{% for i in "54321" %}<option value="{{i}}" {% if obj.honesty == i|add:0 %}selected{% endif %}>{{i}}</option>{% endfor %}</select></label><br><br>
+      <label>Politeness <select name="politeness" class="rating-select">{% for i in "54321" %}<option value="{{i}}">{{i}}</option>{% endfor %}</select></label><br><br>
+      <label>Attentiveness <select name="attentiveness" class="rating-select">{% for i in "54321" %}<option value="{{i}}">{{i}}</option>{% endfor %}</select></label>
+    </div>
+
+    <div class="card">
+      <h3>PSYCHOMOTOR SKILLS</h3>
+      <label>Handwriting <select name="handwriting" class="rating-select">{% for i in "54321" %}<option value="{{i}}">{{i}}</option>{% endfor %}</select></label><br><br>
+      <label>Games & Sports <select name="games_sports" class="rating-select">{% for i in "54321" %}<option value="{{i}}">{{i}}</option>{% endfor %}</select></label><br><br>
+      <label>Handling Tools <select name="handling_tools" class="rating-select">{% for i in "54321" %}<option value="{{i}}">{{i}}</option>{% endfor %}</select></label><br><br>
+      <label>Drawing & Painting <select name="drawing" class="rating-select">{% for i in "54321" %}<option value="{{i}}">{{i}}</option>{% endfor %}</select></label><br><br>
+      <label>Leadership <select name="leadership" class="rating-select">{% for i in "54321" %}<option value="{{i}}">{{i}}</option>{% endfor %}</select></label>
+    </div>
+
+    <button type="submit" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer;">💾 Save & Next Student →</button>
+  </form>
+</div>
+{% endblock %}

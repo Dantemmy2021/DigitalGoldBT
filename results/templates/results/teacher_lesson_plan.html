@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px; margin:20px auto; padding:20px;">
+<h2 style="color:{{ primary_color }}">Lesson Plan / Scheme of Work</h2>
+<form method="POST" style="background:#f5f5f5; padding:15px; border-radius:8px;">
+{% csrf_token %}
+<select name="student_class" required style="width:100%; padding:8px; margin:5px 0;"><option value="">Select Class</option>{% for c in classes %}<option value="{{c.id}}">{{c.name}}</option>{% endfor %}</select>
+<select name="subject" required style="width:100%; padding:8px; margin:5px 0;"><option value="">Select Subject</option>{% for s in subjects %}<option value="{{s.id}}">{{s.name}}</option>{% endfor %}</select>
+<select name="week" required style="width:100%; padding:8px; margin:5px 0;">{% for i in "123456789012" %}<option>Week {{forloop.counter}}</option>{% endfor %}</select>
+<input name="topic" placeholder="Topic" required style="width:100%; padding:8px; margin:5px 0;">
+<textarea name="objectives" placeholder="Objectives" required style="width:100%; padding:8px; margin:5px 0;"></textarea>
+<textarea name="activities" placeholder="Activities / Lesson Presentation" required style="width:100%; padding:8px; margin:5px 0;"></textarea>
+<input name="materials" placeholder="Instructional Materials" style="width:100%; padding:8px; margin:5px 0;">
+<textarea name="assignment" placeholder="Assignment / Evaluation" style="width:100%; padding:8px; margin:5px 0;"></textarea>
+<button type="submit" style="background:{{ primary_color }}; color:white; padding:10px 20px; border:none; border-radius:4px;">Save Lesson Plan</button>
+</form>
+
+<h3 style="margin-top:30px;">My Lesson Plans</h3>
+<table border="1" cellpadding="8" style="width:100%; border-collapse:collapse;">
+<tr><th>Week</th><th>Subject</th><th>Class</th><th>Topic</th><th>Status</th></tr>
+{% for p in plans %}
+<tr>
+  <td>{{p.week}}</td>
+  <td>{{p.subject}}</td>
+  <td>{{p.student_class}}</td>
+  <td>{{p.topic}}</td>
+  <td>{% if p.is_approved %}✅ Approved{% else %}⏳ Pending{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No lesson plans yet</td></tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

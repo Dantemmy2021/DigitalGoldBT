@@ -1,0 +1,202 @@
+{% load static %}
+{% load dict_extras %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Transcript - {{ student.full_name }} - {{ school.name }}</title>
+    <style>
+        @page { size: A4; margin: 15mm; }
+        body { 
+            font-family: 'Times New Roman', serif; 
+            background: #f1f5f9; /* light grey outside */
+            color: #000;
+            margin: 0;
+            padding: 20px;
+        }
+        .transcript { 
+            max-width: 900px; /* FIX 1: No more full screen */
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 3px solid {{ school.primary_color|default:"#004080" }}; 
+            padding-bottom: 10px; 
+            margin-bottom: 15px;
+        }
+        .header img { height: 70px; margin-bottom: 5px; }
+        .header h2 { margin: 3px 0; font-size: 20px; color: {{ school.primary_color|default:"#004080" }}; }
+        .header h3 { margin: 3px 0; font-size: 16px; text-decoration: underline; }
+        .student-info { 
+            display: grid; 
+            grid-template-columns: 1fr 130px; 
+            gap: 20px; 
+            margin: 15px 0; 
+            font-size: 13px;
+        }
+        .student-info img { 
+            width: 110px; 
+            height: 130px; 
+            border: 2px solid {{ school.primary_color|default:"#004080" }}; 
+            object-fit: cover; 
+        }
+        .section-title {
+            background: {{ school.primary_color|default:"#004080" }}; /* FIX 2: Uses school color */
+            color: white;
+            padding: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+            font-weight: bold;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 8px; 
+            font-size: 11px; 
+        }
+        th, td { 
+            border: 1px solid #000; 
+            padding: 6px 3px; 
+            text-align: center; 
+        }
+        th { 
+            background: {{ school.primary_color|default:"#004080" }}; /* FIX 2: Uses school color */
+            color: white; 
+            font-weight: bold;
+        }
+        td.subject { text-align: left; padding-left: 6px; }
+        .summary { 
+            margin-top: 10px; 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            font-size: 12px;
+            margin-bottom: 30px;
+        }
+        .footer { 
+            margin-top: 50px; 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 12px;
+            border-top: 2px solid {{ school.primary_color|default:"#004080" }};
+            padding-top: 20px;
+        }
+        .footer img { height: 40px; margin-top: 5px; }
+        .page-break { page-break-after: always; }
+        
+        @media print { 
+            body { background: white; padding: 0; }
+            .transcript { box-shadow: none; padding: 20px; max-width: 100%; border-radius: 0; }
+            .no-print { display: none !important; } 
+        }
+    </style>
+</head>
+<body>
+
+<div class="transcript">
+    <div class="header">
+        {% if school.logo %}
+            <img src="{{ school.logo.url }}" alt="{{ school.name }} Logo">
+        {% endif %}
+        <h2>{{ school.name|upper }}</h2>
+        <p>{{ school.address }}</p>
+        <h3>STUDENT CUMULATIVE ACADEMIC TRANSCRIPT</h3>
+    </div>
+
+    <div class="student-info">
+        <div>
+            <p><b>Student Name:</b> {{ student.full_name|upper }}</p>
+            <p><b>Admission No:</b> {{ student.admission_no }}</p>
+            <p><b>Current Class:</b> {{ student.student_class.name }}</p>
+            <p><b>Gender:</b> {{ student.gender|default:"-" }}</p>
+        </div>
+        <div>
+            {% if student.passport %}
+                <img src="{{ student.passport.url }}" alt="Student Passport">
+            {% else %}
+                <div style="width:110px; height:130px; border:2px solid {{ school.primary_color|default:'#004080' }}; display:flex; align-items:center; justify-content:center; font-size:10px">NO PASSPORT</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% for section in transcript_sections %}
+    <div class="section-title">
+        {{ section.session_class }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:40px">S/N</th>
+                <th>SUBJECT</th>
+                {% for term in all_terms %}
+                <th>{{ term }}</th>
+                {% endfor %}
+                <th>CUM AVG</th>
+                <th>GRADE</th>
+                <th>REMARK</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in section.table %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td class="subject">{{ row.subject }}</td>
+                {% for term in all_terms %}
+                <td>{{ row.terms|dict_get:term }}</td>
+                {% endfor %}
+                <td><b>{{ row.cum_avg }}</b></td>
+                <td><b>{{ row.grade }}</b></td>
+                <td>{{ row.remark }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{{ all_terms|length|add:4 }}">No scores recorded for this class.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div>
+            <p><b>Total Subjects Offered:</b> {{ section.table|length }}</p>
+        </div>
+        <div>
+            <p><b>Class Teacher's Comment:</b> _________________________________</p>
+        </div>
+    </div>
+
+    {% if not forloop.last %}
+    <div class="page-break"></div>
+    {% endif %}
+    {% empty %}
+    <p style="text-align:center; margin-top:30px"><b>No academic records found for this student.</b></p>
+    {% endfor %}
+
+    <div class="footer">
+        <div>
+            <p><b>Class Teacher:</b> ____________________</p>
+            <p>Name & Signature</p>
+        </div>
+        <div style="text-align:right">
+            <p><b>Principal:</b> ____________________</p>
+            <p>Name, Signature & Stamp</p>
+            {% if school.principal_signature %}
+            <img src="{{ school.principal_signature.url }}" alt="Principal Signature">
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="no-print" style="text-align:center; margin-top:30px">
+        <button onclick="window.print()" style="background:{{ school.primary_color|default:'#004080' }}; color:white; padding:12px 25px; border:none; border-radius:4px; cursor:pointer; font-size:15px">
+            🖨️ Print Full Transcript
+        </button>
+    </div>
+</div>
+</body>
+</html>

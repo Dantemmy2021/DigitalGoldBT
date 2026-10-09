@@ -1,0 +1,21 @@
+{% extends "admin/index.html" %}
+{% block content %}
+{{ block.super }}
+
+{% if request.school %}
+<div style="background:#d4edda; border:1px solid #c3e6cb; padding:20px; margin:20px 0; border-radius:8px;">
+    <h3 style="margin-top:0; color:#155724;">⚡ Quick Bulk Actions</h3>
+    <a href="/{{ request.school.slug }}/bulk-allocate-subjects/" 
+       style="background:#28a745; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block; font-weight:bold;">
+       Bulk Allocate Subjects - {{ request.school.name }}
+    </a>
+</div>
+{% else %}
+<div style="background:#f8d7da; border:1px solid #f5c6cb; padding:20px; margin:20px 0; border-radius:8px;">
+    <b>DEBUG:</b> No school found for user: {{ request.user.username }}<br>
+    Has TeacherProfile: {{ request.user.teacherprofile|yesno:"Yes,No" }}<br>
+    School in Profile: {{ request.user.teacherprofile.school|default:"None" }}
+</div>
+{% endif %}
+
+{% endblock %}

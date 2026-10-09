@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:800px; margin:20px auto; padding:20px;">
+  <h2 style="color:{{ primary_color }}">Select Class - Psychomotor</h2>
+  <p><a href="{% url 'results:teacher_dashboard' school_slug=school.slug %}">← Back to Dashboard</a></p>
+  {% for c in classes %}
+    <a href="{% url 'results:psychomotor_student_list' school_slug=school.slug class_id=c.id %}" style="display:block; padding:15px; background:#f9f9f9; border:1px solid #ddd; margin:10px 0; text-decoration:none; border-radius:6px;">
+      <b>{{ c.name }}</b> - {{ c.students.count }} students
+    </a>
+  {% empty %}
+    <p>No classes assigned</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h2>Import Questions from CSV</h2>
+<p><b>1. Upload all images first</b> to: `media/cbt_questions/` folder</p>
+<p><b>2. CSV Columns:</b> test_id, question_text, question_image, option_a, option_b, option_c, option_d, correct_answer, marks</p>
+<p><b>Example:</b> 5,"What organ is this?","cbt_questions/kidney.jpg",Brain,Heart,Kidney,Liver,C,1</p>
+<form action="." method="POST" enctype="multipart/form-data">
+  {{ form.as_p }}
+  {% csrf_token %}
+  <button type="submit">Upload</button>
+</form>
+{% endblock %}

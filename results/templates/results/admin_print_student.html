@@ -3,46 +3,64 @@
 <html>
 <head>
     <title>{{ student.full_name }} - Result Slip</title>
+    <meta charset="UTF-8">
     <style>
-        body { font-family: 'Times New Roman', serif; margin: 20px; color: #000; font-size: 13px; }
+        @page { size: A4 landscape; margin: 0.5in; }
+        body { font-family: 'Times New Roman', serif; margin: 20px; color: #000; font-size: 12.5px; }
+        
         .header { text-align: center; margin-bottom: 15px; border-bottom: 3px solid #000; padding-bottom: 10px; position: relative; }
-        .logo { width: 80px; height: 80px; position: absolute; left: 0; top: 0; }
-        .school-name { font-size: 24px; font-weight: bold; color: #b30000; margin: 0; text-transform: uppercase; }
+        .logo { width: 80px; height: 80px; position: absolute; left: 0; top: 5px; object-fit: contain; }
+        .school-name { font-size: 24px; font-weight: bold; color: #b30000; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
         .school-address { font-size: 12px; margin: 2px 0; }
         .result-title { font-size: 16px; font-weight: bold; margin-top: 8px; text-decoration: underline; }
-        .term-selector { text-align: center; margin-bottom: 15px; padding: 10px; border: 1px dashed #ccc; background: #f9f9f9; }
-        .student-info { margin-bottom: 15px; border: 1px solid #000; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; }
+        
+        .term-selector { text-align: center; margin-bottom: 15px; padding: 10px; border: 1px dashed #ccc; background: #f9f9f9; border-radius: 5px; }
+        .term-selector select { padding: 6px 10px; font-size: 13px; border-radius: 4px; border: 1px solid #ccc; }
+        
+        .student-info { margin-bottom: 15px; border: 1px solid #000; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-radius: 4px; }
         .student-info p { margin: 4px 0; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10.5px; }
         table, th, td { border: 1px solid #000; }
-        th, td { padding: 5px; text-align: center; }
+        th, td { padding: 5px 3px; text-align: center; }
         th { background-color: #f2f2f2; font-weight: bold; }
-        td.subject { text-align: left; }
-        .summary { margin-top: 15px; border: 1px solid #000; padding: 10px; font-weight: bold; }
+        td.subject { text-align: left; padding-left: 5px; }
+        .overall-col { background: #fff8dc; font-weight: bold; }
+        
+        .summary { margin-top: 15px; border: 1px solid #000; padding: 10px; font-weight: bold; background: #f9f9f9; border-radius: 4px; }
         .summary p { margin: 5px 0; }
+        
         .footer { text-align: center; margin-top: 40px; font-size: 12px; }
-        .signature-line { margin-top: 50px; border-top: 1px solid #000; width: 220px; display: inline-block; }
-        .print-btn { background: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; margin: 10px 0; border-radius: 4px; }
-        @media print { .print-btn, .term-selector { display: none; } body { margin: 0.5in; } }
+        .signature-line { margin-top: 40px; border-top: 1px solid #000; width: 220px; display: inline-block; }
+        .watermark { font-style: italic; color: #555; margin-top: 10px; }
+        
+        .print-btn { background: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; margin: 10px 0; border-radius: 4px; font-weight: bold; }
+        .print-btn:hover { background: #218838; }
+        
+        @media print {
+            .print-btn, .term-selector { display: none; } 
+            body { margin: 0; } 
+            .student-info, .summary { border: 1px solid #000; }
+        }
     </style>
 </head>
 <body>
     <button class="print-btn" onclick="window.print()">🖨️ Print Slip</button>
 
     <div class="header">
-        <img src="{% static 'images/logo.png' %}" alt="School Logo" class="logo">
-        <h1 class="school-name">OKC SCHOOL</h1>
-        <p class="school-address">No. 15 School Road, Lagos, Nigeria</p>
-        <p class="school-address">Tel: 08012345678 | Email: info@okcschool.com</p>
+        {% if school.logo %}
+            <img src="{{ school.logo.url }}" alt="{{ school.name }} Logo" class="logo">
+        {% endif %}
+        <h1 class="school-name">{{ school.name }}</h1>
+        <p class="school-address">{{ school.address|default:"" }}</p>
         <h3 class="result-title">STUDENT ACADEMIC REPORT</h3>
         <p><strong>{{ term }} - {{ session }} Session</strong></p>
     </div>
 
-    <!-- TERM SWITCHER -->
     <div class="term-selector">
-        <form method="get" style="display: inline-block;">
-            <label for="term"><strong>Select Term: </strong></label>
-            <select name="term" id="term" onchange="this.form.submit()" style="padding: 5px 10px; font-size: 14px;">
+        <form method="get">
+            <label><strong>Select Term: </strong></label>
+            <select name="term" onchange="this.form.submit()">
                 {% for t in all_terms %}
                 <option value="{{ t }}" {% if t == term %}selected{% endif %}>{{ t }}</option>
                 {% endfor %}
@@ -54,12 +72,12 @@
         <div>
             <p><strong>Name:</strong> {{ student.full_name }}</p>
             <p><strong>Admission No:</strong> {{ student.admission_no }}</p>
-            <p><strong>Class:</strong> {{ student.student_class }} {{ student.arm }}</p>
+            <p><strong>Class:</strong> {{ student.student_class }} {{ student.arm|default:"" }}</p>
         </div>
         <div>
-            <p><strong>Joined:</strong> {{ student.joined_term }}</p>
+            <p><strong>Session:</strong> {{ session }}</p>
             <p><strong>Term:</strong> {{ term }}</p>
-            <p><strong>Position:</strong> {{ position }}</p>
+            <p><strong>Position:</strong> {{ position|default:"-" }}</p>
         </div>
     </div>
 
@@ -68,51 +86,49 @@
             <tr>
                 <th>S/N</th>
                 <th>Subject</th>
-                <th>CA1<br><small>/10</small></th>
-                <th>CA2<br><small>/10</small></th>
-                <th>Project<br><small>/10</small></th>
-                <th>Assign<br><small>/10</small></th>
-                <th>Exam<br><small>/60</small></th>
-                <th>Total<br><small>/100</small></th>
+                {% for comp in components %}
+                    <th>{{ comp.name|upper }}<br><small>/{{ comp.max_score }}</small></th>
+                {% endfor %}
+                <th>Total</th>
                 <th>Grade</th>
                 <th>Remark</th>
             </tr>
         </thead>
         <tbody>
-            {% for item in results_data %}
+            {% for item in subjects %}
             <tr>
                 <td>{{ forloop.counter }}</td>
-                <td class="subject">{{ item.subject }}</td>
-                <td>{{ item.ca1 }}</td>
-                <td>{{ item.ca2 }}</td>
-                <td>{{ item.project }}</td>
-                <td>{{ item.assignment }}</td>
-                <td>{{ item.exam }}</td>
+                <td class="subject">{{ item.subject.name }}</td>
+                
+                {% for comp_score in item.components %}
+                    <td>{{ comp_score.score }}</td>
+                {% endfor %}
+                
                 <td><strong>{{ item.total }}</strong></td>
                 <td><strong>{{ item.grade }}</strong></td>
                 <td>{{ item.remark }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="10">No scores entered for this term</td></tr>
+            <tr><td colspan="{{ components|length|add:5 }}">No scores entered for this term</td></tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <div class="summary">
-        <p>Total Score This Term: {{ total_score }}</p>
-        <p>Term Average: {{ average }}%</p>
-        <p>Cumulative Average: {{ cumulative_avg }}% <small>- Based on {{ divisor }} term(s) from {{ student.joined_term }} to {{ term }}</small></p>
-    </div>
-
     <div class="footer">
         <table style="border:none; width:100%;">
             <tr>
-                <td style="border:none; text-align:left;">Class Teacher's Signature: <span class="signature-line"></span></td>
-                <td style="border:none; text-align:right;">Principal's Signature & Stamp: <span class="signature-line"></span></td>
+                <td style="border:none; text-align:left;">
+                    <p>Class Teacher's Signature</p>
+                    <span class="signature-line"></span>
+                </td>
+                <td style="border:none; text-align:right;">
+                    <p>Principal's Signature & Stamp</p>
+                    <span class="signature-line"></span>
+                </td>
             </tr>
         </table>
-        <p style="margin-top: 20px; font-style: italic;">This is a computer generated result and is valid without signature</p>
+        <p class="watermark">This is a computer generated result and is valid without signature</p>
+        <p style="font-size:10px; margin-top:5px;">Printed on: {% now "D, d M Y H:i" %}</p>
     </div>
-
 </body>
 </html>

@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Welcome to {{ school.name }}</title>
+<style>
+  body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, {{ school.primary_color }} 10%, {{ school.secondary_color }} 90%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+  .landing-box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; max-width: 500px; width: 100%; }
+  .school-logo { height: 100px; width: 100px; object-fit: contain; margin-bottom: 15px; border-radius: 15px; border: 3px solid {{ school.primary_color }}; }
+  h1 { color: {{ school.primary_color }}; }
+  .btn { display: block; padding: 16px; margin: 12px 0; color: white; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 16px; }
+  .btn.parent { background: #28a745; }
+  .btn.teacher { background: #007bff; }
+  .btn.admin { background: #6c757d; }
+</style>
+</head>
+<body>
+  <div class="landing-box">
+    {% if school.logo %}
+        <img src="{{ school.logo.url }}" alt="{{ school.name }} Logo" class="school-logo">
+    {% endif %}
+    
+    <h1>Welcome to {{ school.name }}</h1>
+    <p style="color:#666;">{{ school.address }}</p>
+
+    <a href="{% url 'results:parent_login' school_slug=school.slug %}" class="btn parent">👨‍👩‍👧‍👦 Parent Portal</a>
+    <a href="{% url 'login' %}" class="btn teacher">👩‍🏫 Teacher Login</a>
+    <a href="/{{ school.slug }}/admin/" class="btn admin">⚙️ Admin Login</a>  <!-- CHANGED THIS -->
+  </div>
+</body>
+</html>

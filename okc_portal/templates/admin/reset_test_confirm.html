@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div style="padding:30px;">
+    <h1>Reset Test Confirmation</h1>
+    <p>Are you sure you want to reset the test <b>"{{ session.test.title }}"</b> for student <b>{{ session.student.full_name }}</b>?</p>
+    <p style="color:red;"><b>Warning:</b> This will permanently delete all {{ session.answers.count }} answers and the score.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="submit" value="Yes, I'm sure. Reset Test" style="background:red; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">
+        <a href="{% url 'admin:results_studenttestsession_changelist' %}" style="background:#6c757d; color:white; padding:10px 20px; border-radius:5px; text-decoration:none; margin-left:10px;">Cancel</a>
+    </form>
+</div>
+{% endblock %}

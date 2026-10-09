@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.accordion-button::after {
+    display: none !important;
+}
+</style>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="mb-0">Welcome, {{ student.full_name }}</h3>
+        <small class="text-muted">{{ student.admission_no }} | {{ student.student_class }}</small>
+    </div>
+    <div class="text-end">
+        <span class="badge bg-primary">{{ term }} {{ session }}</span><br>
+        <a href="{% url 'school_student_logout' school_slug=school_slug %}" class="btn btn-sm btn-warning mt-2">Logout</a>
+    </div>
+  </div>
+
+  <!-- CA TESTS CARD -->
+  <div class="card mb-4 shadow-sm border-success">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">📝 Active CA Tests</h5>
+    </div>
+    <div class="card-body">
+        {% if active_ca_tests %}
+            {% for ca in active_ca_tests %}
+                <div class="alert {% if ca.id in submitted_ca_ids %}alert-success{% else %}alert-info{% endif %} d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <strong>{{ ca.title }}</strong> <br>
+                        <small>Subject: {{ ca.subject.name }} | Class: {{ ca.student_class.name }} | Date: {{ ca.test_date }}</small>
+                    </div>
+                    
+                    {% if ca.id in submitted_ca_ids %}
+                        <button class="btn btn-success btn-sm" disabled>
+                            <i class="bi bi-check-circle"></i> Submitted
+                        </button>
+                    {% else %}
+                        <a href="{% url 'results:take_ca' school_slug=school_slug ca_id=ca.id %}" class="btn btn-primary btn-sm">
+                            Start CBT
+                        </a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted mb-0">No active CA test right now</p>
+        {% endif %}
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <ul class="nav nav-tabs" id="studentTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <a class="nav-link" href="{% url 'results:parent_transcript_login' school_slug=school_slug %}">
+        <i class="bi bi-bar-chart"></i> Result
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="note-tab" data-bs-toggle="tab" data-bs-target="#note" type="button" role="tab" aria-controls="note" aria-selected="true">
+        <i class="bi bi-chat-dots"></i> Teacher's Note
+        {% if unread_count > 0 %}
+        <span class="badge bg-danger rounded-pill ms-1">{{ unread_count }}</span>
+        {% endif %}
+      </button>
+    </li>
+  </ul>
+
+  <!-- TAB CONTENT -->
+  <div class="tab-content mt-3" id="studentTabContent">
+
+    <!-- TEACHER'S NOTE TAB -->
+    <div class="tab-pane fade show active" id="note" role="tabpanel" aria-labelledby="note-tab">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Teacher's Notes</h4>
+        {% if unread_count > 0 %}
+        <span class="badge bg-danger rounded-pill">
+          <i class="bi bi-bell-fill"></i> {{ unread_count }} New
+        </span>
+        {% endif %}
+      </div>
+
+      {% if notes %}
+        <div class="accordion" id="notesAccordion">
+        {% for note in notes %}
+        <div class="accordion-item mb-2 shadow-sm {% if not note.is_read %}border-primary{% endif %}" style="overflow:hidden; border-radius:8px;">
+          <h2 class="accordion-header" id="heading{{ note.id }}" style="position:relative;">
+            
+            <button class="accordion-button {% if note.is_read %}collapsed{% endif %} {% if not note.is_read %}bg-info bg-opacity-25{% endif %}" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#collapse{{ note.id }}" 
+                    aria-expanded="{% if not note.is_read %}true{% else %}false{% endif %}" 
+                    aria-controls="collapse{{ note.id }}"
+                    style="padding-right:210px;">
+              
+              <div>
+                <strong>{{ note.title }}</strong>
+                {% if not note.is_read %}<span class="badge bg-danger ms-2">New</span>{% endif %}
+                <br>
+                <small class="text-muted">By: {{ note.teacher.user.get_full_name|default:note.teacher.user.username }} | {{ note.uploaded_at|date:"d M Y, h:i A" }}</small>
+              </div>
+            </button>
+
+            <!-- VIEW + DOWNLOAD BUTTONS ONLY -->
+            <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); display:flex; gap:6px; z-index:5;">
+                <a href="{% url 'results:student_note_detail' school_slug=school_slug note_id=note.id %}" 
+                   class="btn btn-sm btn-dark"
+                   style="padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;"
+                   onclick="event.stopPropagation();">
+                   👁️ View
+                </a>
+                {% if note.file %}
+                <a href="{{ note.file.url }}" target="_blank"
+                   class="btn btn-sm btn-primary"
+                   style="padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;"
+                   onclick="event.stopPropagation();">
+                   📥 Download
+                </a>
+                {% else %}
+                <button onclick="event.stopPropagation(); downloadNote({{ note.id }}, '{{ note.title|escapejs }}')" 
+                        class="btn btn-sm btn-primary"
+                        style="padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;">
+                   📥 Download
+                </button>
+                {% endif %}
+            </div>
+
+          </h2>
+          <div id="collapse{{ note.id }}" 
+               class="accordion-collapse collapse {% if not note.is_read %}show{% endif %}" 
+               aria-labelledby="heading{{ note.id }}" 
+               data-bs-parent="#notesAccordion">
+            <div class="accordion-body">
+              <div class="note-content mb-3" id="note-content-{{ note.id }}">
+                {{ note.note|safe }}
+              </div>
+              <hr>
+              <div class="d-flex gap-2 flex-wrap">
+                  {% if not note.is_read %}
+                  <a href="?read={{ note.id }}" class="btn btn-sm btn-warning">Mark as Read</a>
+                  {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-warning">No teacher's notes yet.</div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+function downloadNote(id, title) {
+    const content = document.getElementById('note-content-' + id).innerHTML;
+    const schoolName = "{{ school.name|default:'Bethel High School'|escapejs }}";
+    const termText = "{{ term|escapejs }}";
+    const sessionText = "{{ session|escapejs }}";
+    const teacherInfo = document.querySelector('#heading' + id + ' small') ? document.querySelector('#heading' + id + ' small').innerText : '';
+    
+    const html = `
+    <html>
+    <head>
+        <title>${title}</title>
+        <style>
+            body{font-family:Arial; padding:30px; font-size:14px; line-height:1.6;}
+            h2{color:#004080; text-align:center; border-bottom:2px solid #004080; padding-bottom:10px;}
+            .meta{color:#666; font-size:12px; margin-bottom:20px; text-align:center;}
+            img{max-width:100% !important; height:auto !important;}
+        </style>
+    </head>
+    <body>
+        <h2>${schoolName}</h2>
+        <h3 style="text-align:center;">${title}</h3>
+        <div class="meta">${teacherInfo}</div>
+        <hr>
+        <div>${content}</div>
+        <hr>
+        <small style="color:#888;">Downloaded from ${schoolName} Portal - ${termText} ${sessionText}</small>
+    </body>
+    </html>`;
+
+    const win = window.open('', '', 'height=800,width=900');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 500);
+}
+</script>
+{% endblock %}

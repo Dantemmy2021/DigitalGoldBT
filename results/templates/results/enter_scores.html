@@ -1,83 +1,183 @@
-{% extends 'base.html' %}
-{% load custom_tags %}
+{% extends "base.html" %}
+{% load results_extras %}
+
 {% block content %}
-<h2>Enter Scores: {{ subject.name }} {{ subject.student_class }}</h2>
-<p><b>CA1, CA2, Project, Assignment: /10 each | Exam: /60 | Total: /100</b></p>
+<style>
+.score-table { width:100%; border-collapse: collapse; margin-top:20px; font-size:13px; }
+.score-table th,.score-table td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+.score-table th { background: {{teacher.school.primary_color}}; color: white; position: sticky; top:0; z-index:10; }
+.score-table input[type=number] { width: 60px; text-align: center; border:1px solid #ccc; border-radius:4px; padding:4px; }
+.score-table input[readonly] { background:#eee!important; cursor:not-allowed; }
+.score-table td:nth-child(3) { text-align: left; font-weight:500; }
+.form-group { display:inline-block; margin-right:15px; margin-bottom: 10px; }
+.btn { padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; }
+.btn-primary { background:{{teacher.school.primary_color}}; color:white; }
+.btn-success { background:{{teacher.school.secondary_color}}; color:#000; margin-top:15px; }
+.btn-disabled { background:#ccc; color:#666; cursor:not-allowed; margin-top:15px; }
+  label { font-weight: bold; }
+.total-cell { font-weight:bold; background:#f8f9fa; }
+.grade-cell { font-weight:bold; }
+.lock-banner { padding:12px; background:#d4edda; border:1px solid #c3e6cb; border-radius:4px; font-weight:bold; color:#155724; margin-top:15px; }
+</style>
+
+<h1>Score Entry Portal</h1>
+<p><b>Teacher:</b> {{teacher.user.get_full_name}} | <b>School:</b> {{teacher.school.name}}</p>
 
 {% if messages %}
-  {% for message in messages %}
-    <p style="color:red;">{{ message }}</p>
-  {% endfor %}
+    {% for message in messages %}
+        <p style="padding:10px; background:{% if message.tags == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; border-radius:4px;">{{ message }}</p>
+    {% endfor %}
 {% endif %}
 
-<form method="post">
-{% csrf_token %}
-<table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%;">
-    <tr style="background:#eee;">
-        <th>S/N</th>
-        <th>Student Name</th>
-        <th>CA1<br>/10</th>
-        <th>CA2<br>/10</th>
-        <th>Project<br>/10</th>
-        <th>Assign<br>/10</th>
-        <th>EXAM<br>/60</th>
-        <th>TOTAL<br>/100</th>
-        <th>GRADE</th>
-    </tr>
-    {% for student in students %}
-    {% with score=scores_dict|get_item:student.id %}
-    <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ student.full_name }}</td>
-        <td><input type="number" class="score-input" name="ca1_{{ student.id }}" value="{{ score.ca1|default:'' }}" min="0" max="10" style="width:60px;" required></td>
-        <td><input type="number" class="score-input" name="ca2_{{ student.id }}" value="{{ score.ca2|default:'' }}" min="0" max="10" style="width:60px;" required></td>
-        <td><input type="number" class="score-input" name="project_{{ student.id }}" value="{{ score.project|default:'' }}" min="0" max="10" style="width:60px;" required></td>
-        <td><input type="number" class="score-input" name="assignment_{{ student.id }}" value="{{ score.assignment|default:'' }}" min="0" max="10" style="width:60px;" required></td>
-        <td><input type="number" class="score-input" name="exam_{{ student.id }}" value="{{ score.exam|default:'' }}" min="0" max="60" style="width:60px;" required></td>
-        <td class="total" style="font-weight:bold;">-</td>
-        <td class="grade" style="font-weight:bold;">-</td>
-    </tr>
-    {% endwith %}
-    {% endfor %}
-</table>
-<br>
-<button type="submit" style="padding:10px 20px; background:green; color:white; border:none; cursor:pointer;">Save Scores</button>
+<!-- STEP 1: SELECT CLASS, SUBJECT, TERM -->
+<form method="get" id="filterForm">
+    <div class="form-group">
+        <label><b>Class:</b></label>
+        <select name="class" required>
+            <option value="">--Select Class--</option>
+            {% for c in classes %}
+            <option value="{{c.id}}" {% if selected_class.id == c.id %}selected{% endif %}>{{c}}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label><b>Subject:</b></label>
+        <select name="subject" required>
+            <option value="">--Select Subject--</option>
+            {% for s in subjects %}
+            <option value="{{s.id}}" {% if selected_subject.id == s.id %}selected{% endif %}>{{s.name}}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label><b>Term:</b></label>
+        <select name="term">
+            {% for value, label in term_choices %}
+            <option value="{{value}}" {% if selected_term == value %}selected{% endif %}>{{label}}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label><b>Session:</b></label>
+        <select name="session">
+            {% for value, label in session_choices %}
+            <option value="{{value}}" {% if selected_session == value %}selected{% endif %}>{{label}}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Load Students</button>
+</form>
+
+{% if students %}
+<hr>
+<!-- STEP 2: ENTER SCORES TABLE -->
+<form method="post" action="{% url 'results:enter_scores' school_slug selected_subject.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="class" value="{{selected_class.id}}">
+    <input type="hidden" name="subject" value="{{selected_subject.id}}">
+    <input type="hidden" name="term" value="{{selected_term}}">
+    <input type="hidden" name="session" value="{{selected_session}}">
+
+    <h2>Enter Scores: {{selected_class}} - {{selected_subject.name}} - {{selected_term}} {{selected_session}}</h2>
+
+    {% if is_locked %}
+    <div class="lock-banner">
+        🔒 {{selected_term}} is LOCKED. Scores cannot be edited. Contact Admin to unlock.
+    </div>
+    {% endif %}
+
+    <div style="overflow-x:auto;">
+    <table class="score-table">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Adm No</th>
+                <th style="text-align:left; min-width:180px;">Student Name</th>
+                {% for comp in components %}
+                <th>{{comp.name}} <br><small>Max: {{comp.max_score}}</small></th>
+                {% endfor %}
+                <th class="total-cell">Total</th>
+                <th class="grade-cell">Grade</th>
+                <th>Remark</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            {% with student_scores=scores_dict|get_item:student.id %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{student.admission_no}}</td>
+                <td>{{student.full_name}}</td>
+
+                {% for comp in components %}
+                {% with score=student_scores|get_item:comp.id %}
+                <td>
+                    <input type="number" step="0.01" min="0" max="{{comp.max_score}}"
+                           name="score_{{student.id}}_{{comp.id}}"
+                           value="{{ score }}"
+                           class="score-input"
+                           data-student="{{student.id}}"
+                           placeholder="0"
+                           {% if is_locked %}readonly{% endif %}>
+                </td>
+                {% endwith %}
+                {% endfor %}
+
+                {% with total=student_scores|get_item:'_total' %}
+                <td class="total-cell" id="total_{{student.id}}">{{ total|floatformat:2 }}</td>
+                <td class="grade-cell" id="grade_{{student.id}}">{{ teacher.school|get_grade:total }}</td>
+                <td id="remark_{{student.id}}">{{ teacher.school|get_remark:total }}</td>
+                {% endwith %}
+            </tr>
+            {% endwith %}
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% if not is_locked %}
+        <button type="submit" class="btn btn-success">💾 Save All Scores</button>
+    {% else %}
+        <button type="button" class="btn btn-disabled" disabled>🔒 Term Locked</button>
+    {% endif %}
 </form>
 
 <script>
-// Auto calculate TOTAL and GRADE
-function calcGrade(total){
-    if(total >= 70) return 'A';
-    if(total >= 60) return 'B';
-    if(total >= 50) return 'C';
-    if(total >= 45) return 'D';
-    if(total >= 40) return 'E';
-    if(total > 0) return 'F';
-    return '-';
-}
-
-function updateRow(row){
-    let inputs = row.querySelectorAll('.score-input');
-    let total = 0;
-    inputs.forEach(input => {
-        total += parseFloat(input.value) || 0;
-    });
-    row.querySelector('.total').innerText = total;
-    row.querySelector('.grade').innerText = calcGrade(total);
-}
-
-// Run on load to show saved scores
-document.addEventListener('DOMContentLoaded', function(){
-    document.querySelectorAll('tr').forEach(row => {
-        if(row.querySelector('.score-input')) updateRow(row);
-    });
+// Auto change URL when subject changes
+document.querySelector('select[name="subject"]').addEventListener('change', function(){
+    let subjectId = this.value;
+    let baseUrl = "{% url 'results:enter_scores' school_slug 0 %}".replace('/0/', '/' + subjectId + '/');
+    document.getElementById('filterForm').action = baseUrl;
 });
 
-// Run on input
-document.querySelectorAll('.score-input').forEach(input => {
-    input.addEventListener('input', function() {
-        updateRow(this.closest('tr'));
+// Set action on page load too
+window.addEventListener('load', function(){
+    let subjectId = "{{selected_subject.id}}";
+    if(subjectId!= "None"){
+        let baseUrl = "{% url 'results:enter_scores' school_slug 0 %}".replace('/0/', '/' + subjectId + '/');
+        document.getElementById('filterForm').action = baseUrl;
+    }
+
+    {% if not is_locked %}
+    document.querySelectorAll('.score-input').forEach(input => {
+        input.addEventListener('input', function(){
+            let studentId = this.dataset.student;
+            let row = this.closest('tr');
+            let total = 0;
+            row.querySelectorAll('.score-input').forEach(i => {
+                total += parseFloat(i.value) || 0;
+            });
+            document.getElementById('total_'+studentId).innerText = total.toFixed(2);
+        });
+        input.dispatchEvent(new Event('input'));
     });
+    {% endif %}
 });
 </script>
+{% endif %}
+
 {% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Parent Transcript Login</h4>
+    </div>
+    <div class="card-body">
+      <p class="text-muted">Enter Admission Number and Transcript PIN to view result</p>
+      
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-danger">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Admission Number</label>
+          <input type="text" name="admission_no" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Transcript PIN</label>
+          <input type="password" name="pin" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">View Transcript</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

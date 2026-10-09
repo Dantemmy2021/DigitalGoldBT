@@ -1,37 +1,157 @@
-@staff_member_required
-def admin_broadsheet(request, class_id):
-    # class_id here is actually the student_class name, not PK
-    student_class_name = get_object_or_404(Student, id=Student.objects.filter(student_class=class_id).first().id).student_class if Student.objects.filter(student_class=class_id).exists() else class_id
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ student_class }} Broadsheet - {{ term }}</title>
+    <meta charset="UTF-8">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+        body { 
+            font-family: 'Times New Roman', serif; 
+            margin: 15px; 
+            font-size: 10px;
+            color: #000;
+        }
+        .header { text-align: center; margin-bottom: 15px; border-bottom: 3px double #000; padding-bottom: 10px;}
+        .logo { width: 70px; height: 70px; object-fit: contain; margin-bottom: 5px; }
+        .school-name { font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 5px 0; letter-spacing: 1px; }
+        .broadsheet-title { font-size: 16px; font-weight: bold; margin: 5px 0; text-decoration: underline; }
+        .class-info { font-size: 12px; margin: 3px 0; }
+        .controls { text-align: center; margin-bottom: 10px; padding: 8px; border: 1px dashed #ccc; background: #f9f9f9; display: flex; justify-content: center; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; table-layout: auto; }
+        table, th, td { border: 1px solid #000; }
+        th, td { padding: 4px 2px; text-align: center; vertical-align: middle; white-space: nowrap; }
+        th { background-color: #e8e8e8; font-weight: bold; font-size: 9px; }
+        td.name { text-align: left; font-weight: bold; padding-left: 5px; white-space: normal; }
+        .print-btn { background: #004080; color: white; padding: 8px 15px; border: none; cursor: pointer; margin: 5px; border-radius: 4px; text-decoration: none; display: inline-block; font-weight: bold; }
+        .toggle-btn { background: #ffc107; color: #000; padding: 8px 15px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; text-decoration: none; display: inline-block; }
+        .cum-col { background: #fff8dc; }
+        .totals { font-weight: bold; }
+        .hidden { display: none !important; }
+        @media print {
+            .print-hide { display: none; } 
+            body { margin: 0.4in; font-size: 8px; } 
+            @page { size: A4 landscape; margin: 0.4in; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-hide" style="margin-bottom: 20px;">
+        {% if can_print %}
+        <a href="{% url 'results:download_broadsheet_pdf' school_slug=school.slug class_id=student_class.id %}?term={{ term }}&view=summary" 
+           class="print-btn" style="background:#28a745;" target="_blank">📥 Download PDF</a>
+        {% endif %}
+        
+        <button class="print-btn" onclick="window.print()">🖨️ Print Page</button>
+        <a href="/admin/" class="print-btn" style="background:#6c757d;">← Back to Admin</a>
+    </div>
 
-    TERM = request.GET.get('term', 'First Term') 
-    SESSION = '2025/2026'
-    ALL_TERMS = ['First Term', 'Second Term', 'Third Term']
-    if TERM not in ALL_TERMS: TERM = 'First Term'
+    <div class="header">
+        {% if logo_url %}
+        <img src="{{ logo_url }}" class="logo" alt="{{ school.name }} Logo">
+        {% endif %}
+        <h1 class="school-name">{{ school.name }}</h1>
+        <h2 class="broadsheet-title">BROADSHEET</h2>
+        <h3 class="class-info">{{ student_class.name }} {{ student_class.arm }} CLASS</h3>
+        <h3 class="class-info">{{ term }} - {{ session }} ACADEMIC SESSION</h3>
+    </div>
 
-    students = Student.objects.filter(student_class=student_class_name).order_by('full_name')
-    
-    # Get all subjects for this class by checking what subjects have scores
-    subject_ids = Score.objects.filter(student__student_class=student_class_name, term=TERM, session=SESSION).values_list('subject_id', flat=True).distinct()
-    subjects = Subject.objects.filter(id__in=subject_ids).order_by('name')
+    <div class="controls print-hide">
+        <form method="get" style="display:inline;">
+            <input type="hidden" name="view" value="{{ view_mode }}">
+            <label><strong>Select Term: </strong></label>
+            <select name="term" onchange="this.form.submit()" style="padding:5px; font-size:14px;">
+                {% for t in all_terms %}
+                <option value="{{ t }}" {% if t == term %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        
+        <a href="?term={{ term }}&view={% if view_mode == 'summary' %}detailed{% else %}summary{% endif %}" 
+           class="toggle-btn">
+           🔄 Switch to {% if view_mode == 'summary' %}Detailed{% else %}Summary{% endif %}
+        </a>
+    </div>
 
-    broadsheet_data = []
-    for student in students:
-        student_row = {'student': student, 'scores': [], 'total': 0}
-        student_total = 0
-        for subject in subjects:
-            score = Score.objects.filter(student=student, subject=subject, term=TERM, session=SESSION).first()
-            if score:
-                score_total = score.ca1 + score.ca2 + score.project + score.assignment + score.exam
-                student_total += score_total
-                student_row['scores'].append({'total': score_total, 'grade': get_grade(score_total)})
-            else:
-                student_row['scores'].append({'total': '-', 'grade': '-'})
-        student_row['total'] = student_total
-        student_row['average'] = round(student_total / len(subjects), 2) if len(subjects) > 0 else 0
-        broadsheet_data.append(student_row)
-    
-    broadsheet_data.sort(key=lambda x: x['total'], reverse=True)
-    for i, row in enumerate(broadsheet_data): row['position'] = i + 1
+    <div class="table-wrapper">
+    <table id="broadsheetTable">
+        <thead>
+            <tr>
+                <th rowspan="2">S/N</th>
+                <th rowspan="2">STUDENT NAME</th>
+                {% for subject in subjects %}
+                <th colspan="{% if view_mode == 'summary' %}2{% else %}{% if term == 'Third Term' %}{{ components|length|add:4 }}{% else %}{{ components|length|add:2 }}{% endif %}{% endif %}">
+                    {{ subject.name|upper|truncatechars:12 }}
+                </th>
+                {% endfor %}
+                <th rowspan="2" class="cum-col">CUM<br>TOTAL %</th>
+                <th rowspan="2" class="cum-col">CUM<br>AVG %</th>
+                <th rowspan="2">POS</th>
+            </tr>
+            <tr>
+                {% for subject in subjects %}
+                    {% if view_mode == 'summary' %}
+                        <th>TOTAL</th><th>GRADE</th>
+                    {% else %}
+                        {% if term == "Third Term" %}
+                            <th>1ST %</th>
+                            <th>2ND %</th>
+                            {% for comp in components %}
+                                <th>{{ comp.name|upper }}<br><small>/{{comp.max_score}}</small></th>
+                            {% endfor %}
+                            <th>TOTAL</th><th>GRADE</th>
+                        {% else %}
+                            {% for comp in components %}
+                                <th>{{ comp.name|upper }}<br><small>/{{comp.max_score}}</small></th>
+                            {% endfor %}
+                            <th>TOTAL</th><th>GRADE</th>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in broadsheet_data %}
+            <tr>
+                <td>{{ row.position }}</td>
+                <td class="name">{{ row.student.full_name|title }}</td>
+                
+                {% for subj_row in row.subject_rows %}
+                    {% if view_mode == 'summary' %}
+                        <td>{{ subj_row.cells|slice:"-2:-1"|first }}</td>
+                        <td>{{ subj_row.cells|last }}</td>
+                    {% else %}
+                        {% for cell in subj_row.cells %}
+                            <td>{{ cell }}</td>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+                
+                <td class="totals cum-col">{{ row.display_cum_total }}</td>
+                <td class="totals cum-col">{{ row.display_cum_avg }}</td>
+                <td class="totals">{{ row.position }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="100" style="text-align:center; padding:20px">
+                    No students found for {{ term }} {{ session }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
 
-    context = {'student_class': student_class_name, 'subjects': subjects, 'broadsheet_data': broadsheet_data, 'term': TERM, 'session': SESSION, 'all_terms': ALL_TERMS}
-    return render(request, 'results/admin_broadsheet.html', context)
+    <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 11px;">
+        <div style="text-align: center; width: 30%;"><div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">Class Teacher</div></div>
+        <div style="text-align: center; width: 30%;"><div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">Head Teacher</div></div>
+        <div style="text-align: center; width: 30%;"><div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px;">Principal</div></div>
+    </div>
+
+    <p style="text-align:center; margin-top:20px; font-size:9px;">
+        Printed on: {% now "D, d M Y H:i" %}
+    </p>
+
+</body>
+</html>

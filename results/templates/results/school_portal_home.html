@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ school.name }} Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            {% if school.logo %}
+            background-image: url('{{ school.logo.url }}');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 400px;
+            background-attachment: fixed;
+            background-color: rgba(244, 244, 244, 0.9);
+            background-blend-mode: lighten;
+            {% endif %}
+        }
+        .container { 
+            max-width:600px; 
+            width:100%;
+            text-align:center; 
+            padding:40px 30px; 
+            background:white; 
+            border-radius:15px; 
+            box-shadow:0 4px 20px rgba(0,0,0,0.15); 
+            backdrop-filter: blur(2px);
+        }
+        h1 { margin-bottom: 10px; color: #333; }
+        p.subtitle { margin-bottom: 30px; color: #666; }
+        .btn { 
+            display:block; 
+            padding:18px; 
+            margin:18px 0; 
+            color:white; 
+            text-decoration:none; 
+            border-radius:8px; 
+            font-size:18px; 
+            font-weight:bold; 
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); opacity:0.95; }
+        .btn-parent { background:#28a745; }
+        .btn-teacher { background:#007bff; }
+        .btn-admin { background:#6c757d; }
+        .footer { margin-top:30px; font-size:12px; color:gray; }
+    </style>
+</head>
+<body>
+<div class="container">
+    
+    <h1>Welcome to {{ school.name }}</h1>
+    <p class="subtitle">Select your portal below</p>
+
+    <a href="{{ parent_login_url }}" class="btn btn-parent">
+        👨‍👩‍👧‍👦 Parent Portal - Check Result
+    </a>
+
+    <a href="{{ teacher_login_url }}" class="btn btn-teacher">
+        👨‍🏫 Teacher Login
+    </a>
+
+    <a href="{{ admin_url }}" class="btn btn-admin">
+        ⚙️ Admin Login
+    </a>
+
+    <p class="footer">© {{ school.name }} - {{ school.address }}</p>
+</div>
+</body>
+</html>

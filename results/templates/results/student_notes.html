@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4" style="max-width:950px;">
+    <h4 style="color:#0d47a1;">📓 My Class Notes - {{ term }} {{ session }}</h4>
+    
+    <div class="card shadow-sm mt-3">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 align-middle">
+                <thead style="background:#f5f7ff;">
+                    <tr>
+                        <th>Subject</th>
+                        <th>Title</th>
+                        <th>Teacher</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for note in notes %}
+                    <tr>
+                        <td><span class="badge bg-primary">{{ note.subject.name }}</span></td>
+                        <td><b>{{ note.title }}</b> {% if not note.is_read %}<span class="badge bg-danger">New</span>{% endif %}</td>
+                        <td>{{ note.teacher.full_name }}</td>
+                        <td>{{ note.uploaded_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'results:student_note_detail' school.slug note.id %}" class="btn btn-sm btn-dark">👁️ View Note</a>
+                            {% if note.file %}
+                            <a href="{{ note.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">📥 Download</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center p-4">No notes yet for this term</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

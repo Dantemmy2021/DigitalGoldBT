@@ -1,0 +1,126 @@
+{% load dict_extras static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ school.name }} - Student Result</title>
+    <style>
+        body { font-family: Arial; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+        .header { text-align: center; border-bottom: 3px solid #004080; padding-bottom: 15px; margin-bottom: 20px; }
+        .header img { height: 80px; object-fit: contain; }
+        .header h1 { color: #004080; margin: 10px 0 5px 0; text-transform: uppercase; }
+        .student-info { margin-bottom: 20px; background: #f9f9f9; padding: 15px; border-radius: 5px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .student-info p { margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        th { background: #004080; color: white; font-weight: bold; }
+        td.subject { text-align: left; font-weight: 500; }
+        .overall-col { background: #fff8dc !important; font-weight: bold; color: #000 !important; }
+        .term-col { background: #e8f4f8 !important; color: #000 !important; }
+        .summary { margin-top: 20px; font-weight: bold; background: #e8f0fe; padding: 15px; border-radius: 5px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #004080; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .btn:hover { background: #002a5a; }
+        .logout { margin-top: 20px; display: inline-block; color: #004080; text-decoration: none; }
+        .logout:hover { text-decoration: underline; }
+        @media print { .btn, .logout { display: none; } body { background: white; padding: 0; } .container {box-shadow: none;} }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            {% if school.logo %}
+                <img src="{{ school.logo.url }}" alt="{{ school.name }} Logo">
+            {% endif %}
+            <h1>{{ school.name }}</h1>
+            <p>Student Result Portal</p>
+        </div>
+
+        <h2 style="color: #004080;">Login Successful ✅</h2>
+
+        <div class="student-info">
+            <div>
+                <h3 style="margin:0 0 10px 0;">{{ student.full_name }}</h3>
+                <p><b>Admission No:</b> {{ student.admission_no }}</p>
+                <p><b>Class:</b> {{ student.student_class }} {{ student.arm|default:"" }}</p>
+            </div>
+            <div>
+                <p><b>Term:</b> {{ term }}</p>
+                <p><b>Session:</b> {{ session }}</p>
+                <p><b>Joined:</b> {{ student.joined_term|default:"-" }}</p>
+            </div>
+        </div>
+        <hr>
+
+        <h3>Academic Result - {{ term }} {{ session }}</h3>
+        {% if results_data %}
+        <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>S/N</th>
+                    <th>Subject</th>
+                    {% for comp in components %}
+                        <th>{{ comp.name|upper }} <br><small>/{{ comp.max_score }}</small></th>
+                    {% endfor %}
+                    <th>Total<br>({{ term }})</th>
+
+                    {% if is_third_term %}
+                        <th class="term-col">1ST TERM %</th>
+                        <th class="term-col">2ND TERM %</th>
+                        <th class="overall-col">CUM AVG</th>
+                        <th class="overall-col">CUM GRADE</th>
+                    {% else %}
+                        <th>Grade</th>
+                    {% endif %}
+                    <th>Remark</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="subject">{{ result.subject }}</td>
+                    
+                    {% for comp in components %}
+                        <td>{{ result.components|dict_get:comp.name|default:"-" }}</td>
+                    {% endfor %}
+                    
+                    <td><b>{{ result.total|floatformat:1|default:"-" }}</b></td>
+
+                    {% if is_third_term %}
+                        <td class="term-col">{{ result.total_first_term|floatformat:1|default:"-" }}</td>
+                        <td class="term-col">{{ result.total_second_term|floatformat:1|default:"-" }}</td>
+                        <td class="overall-col">{{ result.cumulative_avg|floatformat:1|default:"-" }}</td>
+                        <td class="overall-col">{{ result.cum_grade|default:"-" }}</td>
+                        <td>{{ result.cum_remark|default:"-" }}</td>
+                    {% else %}
+                        <td><b>{{ result.grade|default:"-" }}</b></td>
+                        <td>{{ result.remark|default:"-" }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+
+        <div class="summary">
+            {% if is_third_term %}
+                <p>Total Score This Term (3rd Only): {{ total_score|floatformat:1 }}</p>
+                <p>Term Average (3rd Only): {{ average }}%</p>
+                <p style="color:#7a0c2e; font-size: 16px;">Cumulative Average (1st+2nd+3rd)/3: {{ cumulative_avg }}% </p>
+            {% else %}
+                <p>Total Score This Term: {{ total_score|floatformat:1 }}</p>
+                <p>Term Average: {{ average }}%</p>
+            {% endif %}
+        </div>
+
+        <a href="{% url 'results:parent_print_result' school_slug=school.slug student_id=student.id %}?term={{ term }}&session={{ session }}" class="btn" target="_blank">🖨️ Download / Print Result</a>
+        {% else %}
+        <p style="text-align:center; padding:20px; color:#777;">No results uploaded yet for {{ term }} {{ session }}.</p>
+        {% endif %}
+
+        <br><br>
+        <a href="{% url 'results:parent_login' school_slug=school.slug %}" class="logout">Logout</a>
+    </div>
+</body>
+</html>

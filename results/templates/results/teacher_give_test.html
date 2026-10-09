@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}Create CA Test{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <h2 class="mb-4">Create CA Test</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- TEST DETAILS -->
+        <div class="card mb-4 p-3">
+            <h5>Test Details</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Class:</label>
+                    <select name="student_class" class="form-select" required>
+                        <option value="">-- Select Class --</option>
+                        {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Subject:</label>
+                    <select name="subject" class="form-select" required>
+                        <option value="">-- Select Subject --</option>
+                        {% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Term:</label>
+                    <select name="term" class="form-select" required>
+                        {% for t_val, t_name in terms %}<option value="{{ t_val }}">{{ t_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Session:</label>
+                    <input type="text" value="{{ school.current_session }}" class="form-control" readonly>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Test Title:</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g Mid-Term CA 1" required>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Test Date:</label>
+                    <input type="date" name="test_date" class="form-control" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Max Score:</label>
+                    <input type="number" name="max_score" value="20" class="form-control" required>
+                </div>
+                <div class="col-md-4 mb-3"> <!-- NEW FIELD -->
+                    <label class="form-label">Duration (Minutes):</label>
+                    <input type="number" name="duration_minutes" class="form-control" value="30" min="1" required>
+                    <div class="form-text">e.g: 30</div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">General Instructions:</label>
+                <textarea name="instructions" rows="2" class="form-control" placeholder="Answer all questions"></textarea>
+            </div>
+        </div>
+
+        <!-- QUESTIONS -->
+        <div class="card mb-4 p-3">
+            <h5>Questions</h5>
+            <div id="questions-container">
+                <!-- Question 1 -->
+                <div class="question-item border rounded p-3 mb-3" data-qnum="1">
+                    <label class="fw-bold mb-2">Question 1:</label>
+                    <textarea name="question_text[]" rows="2" class="form-control mb-3" placeholder="Type question here..." required></textarea>
+
+                    <label class="fw-bold">Options: <small class="text-muted">Click 1 "Correct" button</small></label>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text">A</span>
+                        <input type="text" name="option_a[]" class="form-control" placeholder="Option A" required>
+                        <button type="button" class="btn btn-outline-success correct-btn" data-option="A">Correct</button>
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text">B</span>
+                        <input type="text" name="option_b[]" class="form-control" placeholder="Option B" required>
+                        <button type="button" class="btn btn-outline-success correct-btn" data-option="B">Correct</button>
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text">C</span>
+                        <input type="text" name="option_c[]" class="form-control" placeholder="Option C" required>
+                        <button type="button" class="btn btn-outline-success correct-btn" data-option="C">Correct</button>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">D</span>
+                        <input type="text" name="option_d[]" class="form-control" placeholder="Option D" required>
+                        <button type="button" class="btn btn-outline-success correct-btn" data-option="D">Correct</button>
+                    </div>
+                    <input type="hidden" name="correct_answer[]" class="correct-answer-input" required>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-2">
+                            <label class="form-label">Upload Image for Q1:</label>
+                            <input type="file" name="question_image[]" class="form-control" accept="image/*">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Marks:</label>
+                            <input type="number" name="marks[]" value="1" min="1" class="form-control">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="add-question" class="btn btn-outline-primary btn-sm">+ Add Another Question</button>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Create Test</button>
+            <a href="{% url 'results:teacher_dashboard' school_slug=school_slug %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+let questionCount = 1;
+
+document.addEventListener('click', function(e){
+    if(e.target.classList.contains('correct-btn')){
+        let questionDiv = e.target.closest('.question-item');
+        let correctInput = questionDiv.querySelector('.correct-answer-input');
+        let option = e.target.dataset.option;
+
+        questionDiv.querySelectorAll('.correct-btn').forEach(btn => {
+            btn.classList.remove('btn-success', 'btn-warning');
+            btn.classList.add('btn-outline-success');
+            btn.innerText = "Correct";
+        });
+
+        e.target.classList.remove('btn-outline-success');
+        e.target.classList.add('btn-success');
+        e.target.innerText = "✓ Correct";
+        correctInput.value = option;
+    }
+});
+
+document.getElementById('add-question').addEventListener('click', function() {
+    questionCount++;
+    const container = document.getElementById('questions-container');
+    const newQ = `
+    <div class="question-item border rounded p-3 mb-3" data-qnum="${questionCount}">
+        <label class="fw-bold mb-2">Question ${questionCount}:</label>
+        <textarea name="question_text[]" rows="2" class="form-control mb-3" placeholder="Type question here..." required></textarea>
+
+        <label class="fw-bold">Options: <small class="text-muted">Click 1 "Correct" button</small></label>
+        <div class="input-group mb-2">
+            <span class="input-group-text">A</span>
+            <input type="text" name="option_a[]" class="form-control" placeholder="Option A" required>
+            <button type="button" class="btn btn-outline-success correct-btn" data-option="A">Correct</button>
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text">B</span>
+            <input type="text" name="option_b[]" class="form-control" placeholder="Option B" required>
+            <button type="button" class="btn btn-outline-success correct-btn" data-option="B">Correct</button>
+        </div>
+        <div class="input-group mb-2">
+            <span class="input-group-text">C</span>
+            <input type="text" name="option_c[]" class="form-control" placeholder="Option C" required>
+            <button type="button" class="btn btn-outline-success correct-btn" data-option="C">Correct</button>
+        </div>
+        <div class="input-group mb-3">
+            <span class="input-group-text">D</span>
+            <input type="text" name="option_d[]" class="form-control" placeholder="Option D" required>
+            <button type="button" class="btn btn-outline-success correct-btn" data-option="D">Correct</button>
+        </div>
+        <input type="hidden" name="correct_answer[]" class="correct-answer-input" required>
+
+        <div class="row">
+            <div class="col-md-8 mb-2">
+                <label class="form-label">Upload Image for Q${questionCount}:</label>
+                <input type="file" name="question_image[]" class="form-control" accept="image/*">
+            </div>
+            <div class="col-md-4 mb-2">
+                <label class="form-label">Marks:</label>
+                <input type="number" name="marks[]" value="1" min="1" class="form-control">
+            </div>
+        </div>
+    </div>`;
+    container.insertAdjacentHTML('beforeend', newQ);
+});
+</script>
+{% endblock %}

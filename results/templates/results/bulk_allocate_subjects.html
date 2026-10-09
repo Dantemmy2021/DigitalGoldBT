@@ -1,0 +1,75 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div class="container" style="padding:20px;">
+<h2>Bulk Allocate Subjects - {{ school.name }}</h2>
+
+<form method="get">
+    <label>Select Class:</label>
+    <select name="class_name" onchange="this.form.submit()">
+        <option value="">-- Choose Class --</option>
+        {% for name in class_names %}
+        <option value="{{name}}" {% if selected_class_name == name %}selected{% endif %}>{{name}}</option>
+        {% endfor %}
+    </select>
+
+    {% if arms %}
+    <label>Select Arm:</label>
+    <select name="arm" onchange="this.form.submit()">
+        <option value="">-- All Arms --</option>
+        {% for arm in arms %}
+        <option value="{{arm}}" {% if selected_arm == arm %}selected{% endif %}>{{arm|default:"No Arm"}}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+
+    <label>Session:</label>
+    <select name="session">
+        {% for val, name in session_choices %}
+        <option value="{{val}}" {% if selected_session == val %}selected{% endif %}>{{name}}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Load</button>
+</form>
+
+<hr>
+
+{% if students %}
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="class_name" value="{{selected_class_name}}">
+    <input type="hidden" name="arm" value="{{selected_arm}}">
+    <input type="hidden" name="session" value="{{selected_session}}">
+
+    <h3>Step 1: Select Subjects for {{selected_class_name}} {% if selected_arm %}[{{selected_arm}}]{% endif %}</h3>
+    <div style="border:1px solid #ccc; padding:10px; max-height:200px; overflow-y:scroll;">
+    {% for subject in subjects %}
+        <label><input type="checkbox" name="subjects" value="{{subject.id}}"> {{subject.name}}</label><br>
+    {% endfor %}
+    </div>
+
+    <h3>Step 2: Select Students - Found {{ students|length }} students</h3>
+    <button type="button" onclick="toggleAll(true)">Select All</button>
+    <button type="button" onclick="toggleAll(false)">Deselect All</button>
+    <div style="border:1px solid #ccc; padding:10px; max-height:300px; overflow-y:scroll;">
+    {% for student in students %}
+        <label>
+            <input type="checkbox" name="students" value="{{student.id}}" class="student_check"> 
+            {{student.admission_no}} - {{student.full_name}} 
+            <span style="color:gray; font-size:12px;">[{{student.student_class.arm|default:"No Arm"}}]</span>
+        </label><br>
+    {% endfor %}
+    </div>
+
+    <br>
+    <button type="submit" style="background:green; color:white; padding:10px 20px;">Allocate Subjects</button>
+</form>
+
+<script>
+function toggleAll(val){
+    document.querySelectorAll('.student_check').forEach(cb => cb.checked = val);
+}
+</script>
+{% endif %}
+
+</div>
+{% endblock %}

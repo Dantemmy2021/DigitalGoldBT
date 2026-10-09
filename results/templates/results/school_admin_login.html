@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ school.name }} Admin Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: {{ school.primary_color|default:"#0d6efd" }};
+      --secondary: {{ school.secondary_color|default:"#ffc107" }};
+    }
+    body { 
+      background: linear-gradient(135deg, var(--primary) 0%, #004080 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+    .login-card {
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      border: none;
+    }
+    .btn-login { 
+      background: var(--primary); 
+      border: none;
+    }
+    .btn-login:hover { 
+      background: var(--secondary); 
+      color: #000;
+    }
+    .logo { max-height: 80px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card login-card p-4">
+        <div class="text-center mb-4">
+          {% if school.logo %}
+            <img src="{{ school.logo.url }}" class="logo mb-3">
+          {% endif %}
+          <h3 class="fw-bold" style="color: var(--primary);">
+            <i class="bi bi-shield-lock-fill"></i> {{ school.name }} Admin
+          </h3>
+          <p class="text-muted">Manage school data, results & broadsheet</p>
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-bold"><i class="bi bi-person"></i> Username</label>
+            <input type="text" name="username" class="form-control form-control-lg" placeholder="Enter admin username" required autofocus>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold"><i class="bi bi-key"></i> Password</label>
+            <input type="password" name="password" class="form-control form-control-lg" placeholder="Enter password" required>
+          </div>
+          <button type="submit" class="btn btn-login btn-lg w-100 text-white fw-bold">
+            <i class="bi bi-box-arrow-in-right"></i> Login
+          </button>
+        </form>
+
+        <div class="text-center mt-3">
+          <a href="{% url 'results:portal_login' school_slug=school.slug %}" class="text-decoration-none">
+            <i class="bi bi-arrow-left"></i> Back to Portal
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

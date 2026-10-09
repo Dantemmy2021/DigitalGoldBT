@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Take Attendance - {{today}}</h2>
+
+<form method="GET">
+    <label>Select Class:</label>
+    <select name="class_id" onchange="this.form.submit()">
+        <option value="">--Select Class--</option>
+        {% for c in classes %}
+        <option value="{{c.id}}" {% if selected_class.id == c.id %}selected{% endif %}>{{c}}</option>
+        {% endfor %}
+    </select>
+</form>
+
+{% if students %}
+<form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="class_id" value="{{selected_class.id}}">
+    <table border="1" width="100%">
+        <tr><th>S/N</th><th>Student Name</th><th>Present</th><th>Absent</th><th>Late</th></tr>
+        {% for student in students %}
+        <tr>
+            <td>{{forloop.counter}}</td>
+            <td>{{student.full_name}}</td>
+            <td><input type="radio" name="status_{{student.id}}" value="Present" required></td>
+            <td><input type="radio" name="status_{{student.id}}" value="Absent"></td>
+            <td><input type="radio" name="status_{{student.id}}" value="Late"></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <button type="submit">Save Attendance</button>
+</form>
+{% endif %}
+
+<a href="{% url 'results:teacher_dashboard' school_slug=school.slug %}">Back to Dashboard</a>
+{% endblock %}

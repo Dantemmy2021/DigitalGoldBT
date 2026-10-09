@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>{{ school.name }} - ID Cards</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:20px; }
+  .top-bar { background:white; padding:12px 18px; border-radius:8px; margin-bottom:20px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .btn { background:{{ school.secondary_color|default:"#FFD700" }}; color:#000; border:none; padding:8px 16px; border-radius:6px; font-weight:900; text-decoration:none; cursor:pointer; }
+  .btn.active { background:{{ school.primary_color|default:"#800020" }}; color:white; }
+  .grid { display:flex; flex-wrap:wrap; gap:18px; }
+  .id-card { width:3.37in; height:2.30in; background:white; border-radius:12px; overflow:hidden; border:2px solid {{ school.primary_color|default:"#800020" }}; display:flex; flex-direction:column; box-shadow:0 3px 10px rgba(0,0,0,0.2); position:relative; }
+  .id-card.portrait { width:2.125in; height:3.37in; }
+  .id-header { background:{{ school.primary_color|default:"#800020" }}; color:white; display:flex; align-items:center; gap:8px; padding:6px 10px; height:42px; flex-shrink:0; }
+  .id-logo { width:32px; height:32px; background:white; border-radius:50%; padding:2px; object-fit:contain; }
+  .id-school { font-size:8px; font-weight:900; line-height:1.1; }
+  .id-body { display:flex; padding:8px; gap:8px; flex:0 0 auto; }
+  .photo-wrap { width:0.82in; height:0.95in; border:2px solid {{ school.primary_color|default:"#800020" }}; border-radius:6px; overflow:hidden; flex-shrink:0; background:#f2f2f2; display:flex; align-items:center; justify-content:center; }
+  .photo-wrap img { width:100%; height:100%; object-fit:cover; }
+  .info { flex:1; font-size:9.5px; line-height:1.3; font-weight:800; }
+  .info b { display:block; font-size:9px; color:#000; }
+  .id-qr { width:0.42in; height:0.42in; border:1px solid #ddd; padding:2px; background:white; border-radius:4px; display:block; }
+  .id-qr-wrap { display:flex; justify-content:flex-end; padding:0 20px 0 0; margin-top:auto; margin-bottom:22px; }
+  .id-footer { background:#111; color:white; text-align:center; font-size:5.5px; padding:5px 4px; font-weight:800; flex-shrink:0; margin-top:auto; }
+  .id-card.portrait .id-body { flex-direction:column; align-items:center; text-align:center; }
+  .id-card.portrait .photo-wrap { width:1.05in; height:1.2in; }
+  .id-card.portrait .id-qr-wrap { justify-content:center; padding:0; margin-bottom:22px; }
+  .id-card.portrait .id-qr { width:0.52in; height:0.52in; }
+  /* BACK SIDE */
+  .back-body { padding:10px 12px; font-size:7px; line-height:1.5; flex:1; display:flex; flex-direction:column; }
+  .back-body h4 { margin:0 0 8px; font-size:8px; color:{{ school.primary_color|default:"#800020" }}; text-transform:uppercase; text-align:center; border-bottom:1px dashed {{ school.primary_color|default:"#800020" }}; padding-bottom:4px; }
+  .back-body ul { margin:0 0 auto; padding-left:12px; }
+  .back-sign { display:flex; justify-content:space-between; margin-top:28px; font-size:6px; }
+  .back-sign div { text-align:center; border-top:1px solid #000; padding-top:2px; min-width:70px; }
+  @media print { 
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  .no-print { display:none !important; } 
+  body { background:white; padding:0; margin:0; } 
+  .grid { gap:10px; } 
+  .id-card { border:2px solid {{ school.primary_color|default:"#800020" }} !important; -webkit-print-color-adjust: exact !important; }
+  .id-header { background:{{ school.primary_color|default:"#800020" }} !important; color:white !important; }
+  .id-footer { background:#111 !important; color:white !important; }
+}
+</style>
+</head>
+<body>
+<div class="top-bar no-print">
+  <span>{{ school.name }} - ID Cards ({{ students|length }}) - {{ layout|upper }}</span>
+  <div style="margin-left:auto; display:flex; gap:6px;">
+    <a class="btn {% if layout == 'landscape' %}active{% endif %}" href="?layout=landscape&class_id={{ selected_class_id|default:'' }}">Landscape</a>
+    <a class="btn {% if layout == 'portrait' %}active{% endif %}" href="?layout=portrait&class_id={{ selected_class_id|default:'' }}">Portrait</a>
+    <a class="btn {% if layout == 'back' %}active{% endif %}" href="?layout=back&class_id={{ selected_class_id|default:'' }}">Back (Land)</a>
+    <a class="btn {% if layout == 'portrait_back' %}active{% endif %}" href="?layout=portrait_back&class_id={{ selected_class_id|default:'' }}">Back (Port)</a>
+    <button class="btn" style="background:{{ school.primary_color|default:"#800020" }};color:white;" onclick="window.print()">Print</button>
+  </div>
+</div>
+
+<div class="grid">
+{% for s in students %}
+  {% if layout == 'back' or layout == 'portrait_back' %}
+    <div class="id-card {% if layout == 'portrait_back' %}portrait{% endif %}">
+      <div class="id-header"><img src="{% if school.logo %}{{ school.logo.url }}{% endif %}" class="id-logo"><div class="id-school">{{ school.name|truncatechars:22|upper }}<br><span style="font-size:6px;">{{ school.motto|default:"IN CHRIST WE STAND"|upper }}</span></div></div>
+      <div class="back-body">
+        <h4>Student ID - Terms & Conditions</h4>
+        <ul>
+          <li>This card is property of {{ school.name }}.</li>
+          <li>Must be worn at all times within school premises.</li>
+          <li>If found, please return to school admin.</li>
+          <li>Valid for Session: {{ school.current_session }}</li>
+          <li>Emergency: {{ school.phone|default:"07036853721" }}</li>
+        </ul>
+        <div class="back-sign">
+          <div>Proprietor Sign</div>
+          <div>Student Sign</div>
+        </div>
+        <div style="text-align:center; margin-top:6px; font-size:5px;">{{ school.address|default:"ECWA Schools, Nigeria"|truncatechars:50 }}</div>
+      </div>
+      <div class="id-footer">Scan to verify • {{ s.admission_no }}</div>
+    </div>
+  {% else %}
+    <div class="id-card {{ layout }}">
+      <div class="id-header"><img src="{% if school.logo %}{{ school.logo.url }}{% endif %}" class="id-logo"><div class="id-school">{{ school.name|truncatechars:22|upper }}<br><span style="font-size:6px;">{{ school.motto|default:"IN CHRIST WE STAND"|upper }}</span></div></div>
+      <div class="id-body">
+        <div class="photo-wrap">{% if s.photo_url %}<img src="{{ s.photo_url }}">{% else %}👤{% endif %}</div>
+        <div class="info">
+          <b>{{ s.full_name|upper|truncatechars:20 }}</b>
+          Adm No: {{ s.admission_no }}<br>
+          Class: {{ s.student_class.name }} {{ s.student_class.arm|default:"" }}<br>
+          Gender: {{ s.gender|default:"-" }}<br>
+          Session: {{ school.current_session }}
+        </div>
+      </div>
+      <div class="id-qr-wrap"><img src="{{ s.qr_code }}" class="id-qr"></div>
+      <div class="id-footer">Scan to verify • {{ school.phone|default:"07036853721" }}</div>
+    </div>
+  {% endif %}
+{% endfor %}
+</div>
+</body>
+</html>

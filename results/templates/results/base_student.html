@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="mb-0">Welcome, {{ student.full_name }}</h3>
+        <small class="text-muted">{{ student.admission_no }} | {{ student.student_class }}</small>
+    </div>
+    <div class="text-end">
+        <span class="badge bg-primary">{{ term }} {{ session }}</span><br>
+        <a href="{% url 'school_student_logout' school_slug=school_slug %}" class="btn btn-sm btn-danger mt-2">Logout</a>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <ul class="nav nav-tabs" id="studentTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="result-tab" data-bs-toggle="tab" data-bs-target="#result" type="button" role="tab" aria-controls="result" aria-selected="false">
+        <i class="bi bi-bar-chart"></i> Result
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="note-tab" data-bs-toggle="tab" data-bs-target="#note" type="button" role="tab" aria-controls="note" aria-selected="true">
+        <i class="bi bi-chat-dots"></i> Teacher's Note
+      </button>
+    </li>
+  </ul>
+
+  <!-- TAB CONTENT -->
+  <div class="tab-content mt-3" id="studentTabContent">
+    
+    <!-- RESULT TAB -->
+    <div class="tab-pane fade" id="result" role="tabpanel" aria-labelledby="result-tab">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4>Result Summary - {{ term }}</h4>
+        <a href="{% url 'results:view_result' school_slug=school_slug %}" class="btn btn-sm btn-outline-primary">View Detailed Result</a>
+      </div>
+      
+      {% if results_data %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Subject</th>
+                <th>Total</th>
+                <th>Grade</th>
+                <th>Remark</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in results_data %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ r.subject }}</td>
+                <td>{{ r.total }}</td>
+                <td><span class="badge bg-success">{{ r.grade }}</span></td>
+                <td>{{ r.remark }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light fw-bold">
+              <tr>
+                <td colspan="2">Average</td>
+                <td colspan="3">{{ average }}%</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-warning">No results recorded for {{ term }} yet.</div>
+      {% endif %}
+    </div>
+
+    <!-- TEACHER'S NOTE TAB -->
+    <div class="tab-pane fade show active" id="note" role="tabpanel" aria-labelledby="note-tab">
+      <h4>Teacher's Comment</h4>
+      {% if note %}
+        <div class="alert alert-info shadow-sm">
+          <p class="mb-2 fs-5">{{ note.note }}</p>
+          <hr>
+          <small class="text-muted">
+            By: <strong>{{ note.teacher.user.get_full_name|default:"Class Teacher" }}</strong> 
+            on {{ note.date|date:"d M, Y" }}
+          </small>
+        </div>
+      {% else %}
+        <div class="alert alert-warning">No teacher's note for {{ term }} yet.</div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

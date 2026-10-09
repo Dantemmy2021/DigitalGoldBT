@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>{{ school.name }} - Parent Portal</title>
+<style>
+  body { font-family: Arial; background: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+  .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+  input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+  button { width: 95%; padding: 10px; background: {{ school.primary_color }}; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+  button:hover { background: {{ school.secondary_color }}; }
+  h2 { color: {{ school.primary_color }}; margin-bottom: 5px; }
+  .subtitle { color: #666; font-size: 14px; margin-bottom: 15px; }
+  .error { color: red; font-size: 14px; margin-bottom: 10px; background: #ffe6e6; padding: 8px; border-radius: 5px; }
+  .note { font-size: 12px; color: #555; margin-top: 15px; }
+</style>
+</head>
+<body>
+  <div class="login-box">
+    {% if school.logo %}
+      <img src="{{ school.logo.url }}" alt="{{ school.name }} Logo" style="max-height: 70px; margin-bottom: 10px;">
+    {% endif %}
+    
+    <h2>{{ school.name }}</h2>
+    <p class="subtitle">Parent Portal - Check Your Ward's Result</p>
+
+    {% if messages %}
+      {% for message in messages %}
+        <p class="error">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+      <input type="text" name="student_id" placeholder="Admission Number" required>
+      <input type="password" name="access_code" placeholder="Parent Phone Number" required>
+      <button type="submit">View Result</button>
+    </form>
+
+    <p class="note">
+      Access Code = Parent Phone Number<br>
+      Example: 08031234567
+    </p>
+  </div>
+</body>
+</html>

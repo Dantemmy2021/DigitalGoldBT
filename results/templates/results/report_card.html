@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Card - {{ student.full_name }}</title>
+    <meta charset="UTF-8">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+        @page { size: A4 landscape; margin: 0.4in; }
+        body { 
+            font-family: 'Times New Roman', serif; 
+            font-size: 10px; 
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+        .page-break { page-break-after: always; }
+        .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 10px; }
+        .logo { width: 65px; height: 65px; object-fit: contain; margin-bottom: 3px; }
+        .school-name { font-size: 20px; font-weight: bold; text-transform: uppercase; margin: 3px 0; letter-spacing: 1px; }
+        .report-title { font-size: 14px; font-weight: bold; text-decoration: underline; margin: 3px 0; }
+        .class-info { font-size: 11px; margin: 2px 0; }
+        
+        .student-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; font-size: 10.5px; margin-bottom: 8px; }
+        .info-box { border: 1px solid #000; padding: 4px 6px; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-bottom: 8px; table-layout: fixed; }
+        table, th, td { border: 1px solid #000; }
+        th, td { padding: 3px 2px; text-align: center; word-wrap: break-word; }
+        th { background: #e8e8e8; font-weight: bold; }
+        td.subject { text-align: left; font-weight: bold; padding-left: 4px; }
+        
+        .summary-box { display: flex; justify-content: space-around; border: 2px solid #000; padding: 6px; margin: 8px 0; font-size: 10.5px; font-weight: bold; }
+        .comment-box { border: 1px solid #000; padding: 5px; min-height: 40px; margin-bottom: 8px; font-size: 10px; }
+        
+        .signature-section { display: flex; justify-content: space-between; margin-top: 15px; font-size: 10px; }
+        .sig-line { border-top: 1px solid #000; width: 180px; text-align: center; padding-top: 3px; }
+        .sig-img { width: 80px; height: 35px; object-fit: contain; }
+        
+        .cum { background: #fff8dc; font-weight: bold; }
+        .footer { text-align:center; margin-top:10px; font-size:9px; font-weight:bold; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    {% if logo_url %}
+    <img src="{{ logo_url }}" class="logo" alt="{{ school.name }}">
+    {% endif %}
+    <div class="school-name">{{ school.name }}</div>
+    <div class="report-title">STUDENT REPORT CARD</div>
+    <div class="class-info">{{ student_class.name }} {{ student_class.arm }} CLASS - {{ term }} - {{ session }} SESSION</div>
+</div>
+
+<div class="student-info">
+    <div class="info-box"><b>NAME:</b> {{ student.full_name|title }}</div>
+    <div class="info-box"><b>ADMISSION NO:</b> {{ student.admission_no }}</div>
+    <div class="info-box"><b>GENDER:</b> {{ student.gender }}</div>
+    <div class="info-box"><b>POSITION:</b> {{ position }} out of {{ total_students }}</div>
+    <div class="info-box"><b>CUM AVERAGE:</b> {{ cum_avg }}%</div>
+    <div class="info-box"><b>ATTENDANCE:</b> {{ attendance }}/{{ total_days }}</div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width:3%">S/N</th>
+            <th style="width:12%">SUBJECT</th>
+            {% if term == "Third Term" %}
+                <th style="width:5%">1ST<br>%</th>
+                <th style="width:5%">2ND<br>%</th>
+            {% endif %}
+            {% for comp in components %}
+                <th style="width:6%">{{ comp.name|upper }}<br><small>/{{ comp.max_score }}</small></th>
+            {% endfor %}
+            <th style="width:6%">EXAM<br><small>/70</small></th>
+            <th style="width:6%">TOTAL</th>
+            <th style="width:5%">GRADE</th>
+            <th style="width:8%">REMARK</th>
+            <th style="width:6%" class="cum">CUM %</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for subj in subjects_data %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td class="subject">{{ subj.name }}</td>
+            {% if term == "Third Term" %}
+                <td>{{ subj.first_term_total|default:"-" }}</td>
+                <td>{{ subj.second_term_total|default:"-" }}</td>
+            {% endif %}
+            {% for score in subj.component_scores %}
+                <td>{{ score|default:"-" }}</td>
+            {% endfor %}
+            <td>{{ subj.exam|default:"-" }}</td>
+            <td><b>{{ subj.total }}</b></td>
+            <td><b>{{ subj.grade }}</b></td>
+            <td>{{ subj.remark }}</td>
+            <td class="cum"><b>{{ subj.cum_percent|default:"-" }}</b></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="summary-box">
+    <div>TOTAL SCORE: {{ total_score }}</div>
+    <div>AVERAGE: {{ average }}%</div>
+    <div>GRADE: {{ overall_grade }}</div>
+    <div>POSITION: {{ position }} / {{ total_students }}</div>
+</div>
+
+<div><b>CLASS TEACHER'S COMMENT:</b></div>
+<div class="comment-box">{{ teacher_comment|default:"................................................................................................................................" }}</div>
+
+<div><b>PRINCIPAL'S COMMENT:</b></div>
+<div class="comment-box">{{ principal_comment|default:"................................................................" }}</div>
+
+<div class="signature-section">
+    <div><div class="sig-line">Class Teacher</div></div>
+    <div><div class="sig-line">Head Teacher</div></div>
+    <div>
+        {% if principal_signature_url %}
+        <img src="{{ principal_signature_url }}" class="sig-img"><br>
+        {% endif %}
+        <div class="sig-line">Principal</div>
+    </div>
+</div>
+
+<div class="footer">
+    NEXT TERM RESUMPTION DATE: {{ resumption_date|date:"l, d F Y" }}
+</div>
+
+<div style="text-align:center; margin-top:3px; font-size:8px;">
+    Printed on: {% now "D, d M Y H:i" %}
+</div>
+
+</body>
+</html>

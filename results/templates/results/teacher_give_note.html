@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+<h2>Give Student Note - {{ school.name }}</h2>
+<form method="POST" enctype="multipart/form-data" class="card p-4 shadow-sm">
+    {% csrf_token %}
+    
+    {# CRITICAL: CKEditor JS must load before the fields #}
+    {{ form.media }}
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Class:</label> 
+            {{ form.student_class }} {# This will auto-reload page when changed #}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Subject:</label> 
+            {{ form.subject }} {# Will only show subjects for selected class #}
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Term:</label> 
+            {{ form.term }}
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Session:</label> 
+            {{ form.session }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Title:</label> 
+            {{ form.title }}
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Note:</label> 
+        {{ form.note }} {# CKEditor with image upload button #}
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Attach File PDF/Doc:</label> 
+        {{ form.file }}
+    </div>
+
+    <button type="submit" class="btn btn-success">Upload Note</button>
+</form>
+<a href="{% url 'results:teacher_dashboard' school_slug=school.slug %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}
