@@ -8,6 +8,7 @@ from ckeditor_uploader.views import browse
 from django.shortcuts import redirect
 
 urlpatterns = [
+    path('', views.home_redirect, name='root_home'),
     path('admin/', admin.site.urls), 
     
     path('ckeditor/upload/', upload, name='ckeditor_upload'),
