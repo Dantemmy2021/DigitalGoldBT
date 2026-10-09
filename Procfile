@@ -1,1 +1,1 @@
-web: gunicorn okc_portal.wsgi --log-file -
+web: gunicorn okc_portal.wsgi 
