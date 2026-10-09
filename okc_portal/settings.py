@@ -27,6 +27,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,14 +81,21 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [ BASE_DIR / "okc_portal" / "static" ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# ===== SCHOOL BRAND COLORS =====
-SCHOOL_PRIMARY_COLOR = '#0A3D91'  # Dark Blue
-SCHOOL_SECONDARY_COLOR = '#F59E0B' # Amber
+SCHOOL_PRIMARY_COLOR = '#0A3D91'
+SCHOOL_SECONDARY_COLOR = '#F59E0B'
 
-# ===== CKEDITOR SETTINGS =====
 CKEDITOR_UPLOAD_PATH = "teacher_notes/"
 CKEDITOR_IMAGE_BACKEND = "pillow"
 CKEDITOR_RESTRICT_ON_UPLOAD = False  
@@ -132,4 +140,4 @@ EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://192.168.43.70:8000']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://192.168.43.70:8000', 'https://digitalgoldbt.onrender.com']
