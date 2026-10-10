@@ -5,13 +5,15 @@ Django settings for okc_portal project.
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import dj_database_url
+
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-b@h2-38-#kelogv=8pdjkpe@@p2%9h%!rat@d38o99rqn0zq$2'
-DEBUG = True
-ALLOWED_HOSTS = ['192.168.43.70', 'localhost', '127.0.0.1', '*']
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-b@h2-38-#kelogv=8pdjkpe@@p2%9h%!rat@d38o99rqn0zq$2')
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = ['192.168.43.70', 'localhost', '127.0.0.1', '*', '.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -58,12 +60,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'okc_portal.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# DATABASE - Use Postgres if DATABASE_URL exists, else SQLite
+if os.getenv('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
